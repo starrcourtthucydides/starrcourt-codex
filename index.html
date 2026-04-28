@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="version" content="1777391228">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="The Archive">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0d">
+<title>The Archive</title>
+<link rel="manifest" id="manifestLink">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0d;--bg2:#111118;--bg3:#1a1a24;--border:#2a2a3a;--border-light:#3a3a50;--text:#e8e4d9;--text-dim:#8a8474;--text-muted:#4a4760;--accent:#c9a96e;--accent2:#7c6fcd;--accent3:#c96e8a;--green:#6ec98a;--red:#c96e6e;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Cormorant Garamond',serif;min-height:100vh;overflow-x:hidden;}em,i{font-style:italic;color:var(--accent);}b,strong{color:#c4563a;font-weight:600;}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Cinzel',serif;font-size:0.95rem;letter-spacing:0.15em;color:var(--accent);}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--text-muted);letter-spacing:0.1em;margin-top:2px;}
+.header-btns{display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.btn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;padding:0.42rem 0.8rem;border:1px solid var(--border-light);background:transparent;color:var(--text-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;border-radius:1px;}
+.btn:hover,.btn:active{border-color:var(--accent);color:var(--accent);}
+.btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.btn-primary:hover,.btn-primary:active{background:#e8c07e;}
+.btn-danger{border-color:var(--red);color:var(--red);}
+.btn-danger:hover,.btn-danger:active{background:var(--red);color:var(--bg);}
+.btn-sm{padding:0.28rem 0.58rem;font-size:0.58rem;}
+.fic-list{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;}
+.fic-list::-webkit-scrollbar{display:none;}
+.fic-tab{padding:0.65rem 0.9rem;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.15s;display:flex;align-items:center;gap:0.45rem;flex-shrink:0;}
+.fic-tab:hover,.fic-tab:active{background:var(--bg3);}
+.fic-tab.active{border-bottom-color:var(--accent);background:var(--bg3);}
+.fic-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.fic-tab-name{font-size:0.82rem;color:var(--text);}
+.fic-tab-genre{font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--text-muted);}
+.main{padding:1.25rem 1rem;max-width:960px;margin:0 auto;}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 0.9rem;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;transition:all 0.2s;white-space:nowrap;flex-shrink:0;}
+.tab:hover{color:var(--text-dim);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.fic-header{margin-bottom:1.25rem;animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fic-eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.15em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.35rem;}
+.fic-name{font-family:'Cinzel',serif;font-size:1.6rem;font-weight:400;line-height:1.15;margin-bottom:0.45rem;}
+.fic-tagline{font-style:italic;font-size:0.95rem;color:var(--text-dim);margin-bottom:0.8rem;}
+.tag-row{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.4rem;}
+.tag{font-family:'JetBrains Mono',monospace;font-size:0.52rem;letter-spacing:0.06em;padding:0.18rem 0.45rem;border:1px solid var(--border-light);color:var(--text-dim);text-transform:uppercase;}
+.tag.a{border-color:var(--accent);color:var(--accent);}
+.tag.p{border-color:var(--accent2);color:var(--accent2);}
+.section{margin-bottom:1.75rem;animation:fadeUp 0.3s ease;}
+.section-title{font-family:'Cinzel',serif;font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:0.8rem;padding-bottom:0.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;}
+.section-title-left{display:flex;align-items:center;gap:0.5rem;}
+.section-body{font-size:0.95rem;line-height:1.8;color:var(--text-dim);}
+.section-body ul{padding-left:1.2rem;margin-top:0.2rem;}
+.section-body li{margin-bottom:0.15rem;}
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.65rem;}
+.char-card{background:var(--bg3);border:1px solid var(--border);padding:0.9rem;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.char-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);opacity:0;transition:opacity 0.2s;}
+.char-card:hover::before,.char-card:active::before{opacity:1;}
+.char-name{font-family:'Cinzel',serif;font-size:0.92rem;margin-bottom:0.18rem;}
+.char-role{font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.55rem;}
+.char-traits{display:flex;flex-wrap:wrap;gap:0.25rem;}
+.char-trait{font-size:0.72rem;font-style:italic;color:var(--text-dim);background:var(--bg2);padding:0.08rem 0.35rem;border:1px solid var(--border);}
+.rel-list{display:flex;flex-direction:column;gap:0.55rem;}
+.rel-item{padding:0.7rem 0.9rem;background:var(--bg3);border:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:0.8rem;}
+.rel-item-content{flex:1;}
+.rel-pair{font-family:'Cinzel',serif;font-size:0.82rem;color:var(--accent);margin-bottom:0.25rem;}
+.rel-desc{font-size:0.88rem;font-style:italic;color:var(--text-dim);line-height:1.6;}
+.rel-desc ul{padding-left:1.2rem;}
+.world-item{padding:0.8rem 0.9rem;background:var(--bg3);border:1px solid var(--border);margin-bottom:0.55rem;display:flex;justify-content:space-between;align-items:flex-start;gap:0.8rem;}
+.world-item-content{flex:1;}
+.world-label{font-family:'JetBrains Mono',monospace;font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:0.25rem;}
+.world-val{font-size:0.88rem;color:var(--text-dim);line-height:1.6;}
+.world-val ul{padding-left:1.2rem;}
+.item-actions{display:flex;gap:0.35rem;flex-shrink:0;}
+/* RESEARCH */
+.research-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.65rem;}
+.research-card{background:var(--bg3);border:1px solid var(--border);padding:0.8rem;position:relative;}
+.research-img{width:100%;height:100px;object-fit:cover;display:block;margin-bottom:0.55rem;}
+.research-img-placeholder{width:100%;height:100px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin-bottom:0.55rem;font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);}
+.research-label{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--accent);letter-spacing:0.08em;margin-bottom:0.18rem;}
+.research-note{font-size:0.82rem;font-style:italic;color:var(--text-dim);line-height:1.5;}
+.research-link{font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--text-muted);word-break:break-all;margin-top:0.35rem;}
+.research-link a{color:var(--accent2);text-decoration:none;}
+.research-delete{position:absolute;top:0.4rem;right:0.4rem;background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:0.8rem;line-height:1;padding:0.2rem 0.35rem;border-radius:1px;}
+.research-delete:hover{color:var(--red);border-color:var(--red);}
+/* WRITING */
+.writing-stats{display:flex;gap:1.25rem;margin-bottom:1rem;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text-muted);letter-spacing:0.08em;}
+.frag-card{background:var(--bg3);border:1px solid var(--border);padding:0.9rem;margin-bottom:0.65rem;cursor:pointer;transition:border-color 0.2s;}
+.frag-card:hover,.frag-card:active{border-color:var(--border-light);}
+.frag-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.8rem;margin-bottom:0.5rem;}
+.frag-title{font-family:'Cinzel',serif;font-size:0.95rem;margin-bottom:0.2rem;}
+.frag-meta{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:0.2rem;}
+.frag-note{font-size:0.82rem;font-style:italic;color:var(--text-dim);}
+.frag-preview{font-size:0.88rem;color:var(--text-muted);line-height:1.6;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;}
+/* CUSTOM CATS */
+.custom-entry{padding:0.7rem 0.9rem;background:var(--bg3);border:1px solid var(--border);margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:flex-start;gap:0.8rem;}
+.custom-entry-body{flex:1;font-size:0.9rem;color:var(--text-dim);line-height:1.7;}
+.custom-entry-body ul{padding-left:1.2rem;}
+/* OVERLAY / MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;align-items:center;justify-content:center;padding:0.75rem;backdrop-filter:blur(6px);}
+.overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border-light);padding:1.35rem;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease;}
+.modal-title{font-family:'Cinzel',serif;font-size:1.05rem;margin-bottom:1.1rem;color:var(--accent);}
+.field-group{margin-bottom:0.75rem;}
+.field-label{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.3rem;display:block;}
+.field-hint{font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--text-muted);margin-top:0.2rem;}
+.field-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Cormorant Garamond',serif;font-size:1rem;padding:0.5rem 0.65rem;outline:none;transition:border-color 0.2s;border-radius:1px;}
+.field-input:focus{border-color:var(--accent);}
+textarea.field-input{resize:vertical;min-height:75px;}
+select.field-input{cursor:pointer;}
+select.field-input option{background:var(--bg2);}
+.modal-actions{display:flex;justify-content:flex-end;gap:0.55rem;margin-top:1.1rem;flex-wrap:wrap;}
+/* CHAR DETAIL */
+.char-detail-modal{background:var(--bg2);border:1px solid var(--border-light);padding:1.35rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease;}
+.cd-name{font-family:'Cinzel',serif;font-size:1.35rem;margin-bottom:0.18rem;}
+.cd-role{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.9rem;}
+.cd-section{margin-bottom:0.9rem;}
+.cd-label{font-family:'JetBrains Mono',monospace;font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.25rem;}
+.cd-body{font-size:0.9rem;color:var(--text-dim);line-height:1.7;font-style:italic;}
+.cd-body ul{padding-left:1.2rem;}
+.cd-header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.2rem;gap:0.5rem;}
+.cd-btns{display:flex;gap:0.35rem;flex-shrink:0;}
+/* WRITING FULL SCREEN */
+.write-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:400;flex-direction:column;}
+.write-screen.open{display:flex;}
+.write-toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.6rem 0.85rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;}
+.write-toolbar-left{display:flex;gap:0.35rem;align-items:center;flex:1;flex-wrap:wrap;}
+.fmt-btn{font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:0.3rem 0.55rem;border:1px solid var(--border-light);background:transparent;color:var(--text-dim);cursor:pointer;transition:all 0.15s;min-width:32px;text-align:center;}
+.fmt-btn:hover,.fmt-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(201,169,110,0.08);}
+.fmt-sep{width:1px;height:20px;background:var(--border);margin:0 0.15rem;}
+.write-meta{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0.85rem;display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;}
+.write-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.06em;}
+.write-meta-item span{color:var(--accent);}
+.write-area-wrap{flex:1;overflow-y:auto;padding:1.5rem 1rem;display:flex;justify-content:center;}
+.write-area{width:100%;max-width:680px;min-height:100%;background:transparent;border:none;color:var(--text);font-family:'Cormorant Garamond',serif;font-size:1.1rem;line-height:2;outline:none;resize:none;caret-color:var(--accent);}.write-area i,.write-area em{font-style:italic;color:var(--accent);}.write-area b,.write-area strong{color:#c4563a;font-weight:600;}
+.write-area:empty:before{content:attr(data-placeholder);color:var(--text-muted);font-style:italic;pointer-events:none;}
+.write-footer{background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
+.write-wc{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.06em;}
+/* FRAG META MODAL */
+.frag-meta-modal{background:var(--bg2);border:1px solid var(--border-light);padding:1.35rem;width:100%;max-width:480px;animation:fadeUp 0.2s ease;}
+/* FRAG DETAIL READ */
+.frag-detail-modal{background:var(--bg2);border:1px solid var(--border-light);padding:1.35rem;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease;}
+.frag-detail-title{font-family:'Cinzel',serif;font-size:1.35rem;margin-bottom:0.25rem;}
+.frag-detail-meta{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.08em;margin-bottom:0.9rem;}
+.frag-detail-note{font-size:0.88rem;font-style:italic;color:var(--accent);margin-bottom:0.9rem;padding:0.55rem 0.8rem;border-left:2px solid var(--accent);}
+.frag-detail-body{font-size:1rem;line-height:2;color:var(--text-dim);font-family:'Cormorant Garamond',serif;word-break:break-word;}.frag-detail-body i,.frag-detail-body em{font-style:italic;color:var(--accent);}.frag-detail-body b,.frag-detail-body strong{color:#c4563a;font-weight:600;}.frag-detail-body h2{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--accent);margin:1.2rem 0 0.5rem;letter-spacing:0.1em;}
+.frag-wc{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);margin-top:0.9rem;letter-spacing:0.08em;}
+/* MISC */
+.save-indicator{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--green);letter-spacing:0.08em;opacity:0;transition:opacity 0.3s;}
+.save-indicator.show{opacity:1;}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-style:italic;}
+.log-panel{position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--bg2);border-left:1px solid var(--border-light);z-index:550;display:flex;flex-direction:column;transition:right 0.3s ease;overflow:hidden;}
+.log-panel.open{right:0;}
+.log-panel-header{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.log-panel-title{font-family:"Cinzel",serif;font-size:0.85rem;letter-spacing:0.12em;color:var(--accent);}
+.log-panel-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:0.2rem 0.4rem;transition:color 0.2s;}
+.log-panel-close:hover{color:var(--accent);}
+.log-panel-body{flex:1;overflow-y:auto;padding:1rem;}
+.log-panel-empty{text-align:center;padding:2rem 1rem;color:var(--text-muted);font-style:italic;font-size:0.88rem;}
+.log-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:540;}
+.log-overlay.open{display:block;}
+.changelog{margin-top:1rem;border-top:1px solid var(--border);padding-top:0.75rem;}
+.changelog-day{margin-bottom:0.5rem;border:1px solid var(--border);background:var(--bg3);}
+.changelog-day-header{padding:0.6rem 0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;user-select:none;}
+.changelog-day-header:hover{background:var(--bg2);}
+.changelog-day-date{font-family:"JetBrains Mono",monospace;font-size:0.62rem;color:var(--accent);letter-spacing:0.08em;flex:1;}
+.changelog-day-meta{font-family:"JetBrains Mono",monospace;font-size:0.58rem;color:var(--text-muted);}
+.changelog-day-arrow{font-size:0.6rem;color:var(--text-muted);transition:transform 0.2s;margin-left:auto;}
+.changelog-day-arrow.open{transform:rotate(90deg);}
+.changelog-day-entries{padding:0 0.85rem 0.6rem;}
+.changelog-session{padding:0.4rem 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;}
+.changelog-session:last-child{border-bottom:none;}
+.changelog-session-time{font-family:"JetBrains Mono",monospace;font-size:0.6rem;color:var(--text-dim);flex:1;}
+.changelog-session-wc{font-family:"JetBrains Mono",monospace;font-size:0.6rem;font-weight:600;}
+.changelog-title{font-family:"JetBrains Mono",monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem;}
+.changelog-entry{padding:0.5rem 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:0.2rem;}
+.changelog-entry:last-child{border-bottom:none;}
+.changelog-time{font-family:"JetBrains Mono",monospace;font-size:0.58rem;color:var(--accent);letter-spacing:0.06em;}
+.changelog-detail{font-size:0.82rem;color:var(--text-dim);font-style:italic;}
+.changelog-note{font-size:0.8rem;color:var(--text-muted);margin-top:0.15rem;}
+.ascend-box{background:linear-gradient(135deg,rgba(201,169,110,0.08),rgba(124,111,205,0.08));border:1px solid var(--accent);padding:1rem;text-align:center;}
+.ascend-title{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.2em;color:var(--accent);margin-bottom:0.5rem;}
+.ascend-desc{font-size:0.82rem;color:var(--text-dim);font-style:italic;margin-bottom:0.75rem;line-height:1.5;}
+.ascend-btn{width:100%;justify-content:center;border-color:var(--accent);color:var(--accent);}
+.ascend-btn.active{background:var(--accent);color:var(--bg);}
+.status-chapter{font-family:'Cinzel',serif;letter-spacing:0.1em;}
+.drag-handle{cursor:grab;color:var(--text-muted);font-size:1rem;padding:0 0.4rem;user-select:none;flex-shrink:0;}
+.drag-handle:active{cursor:grabbing;}
+.frag-card.dragging{opacity:0.4;border-color:var(--accent);}
+.frag-card.drag-over{border-top:2px solid var(--accent);}
+.fic-tab.dragging{opacity:0.4;}
+.fic-tab.drag-over{border-left:2px solid var(--accent);}
+.install-banner{background:var(--bg3);border-bottom:1px solid var(--border);padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;font-size:0.82rem;color:var(--text-dim);}
+.install-banner.hidden{display:none;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border-light);}
+</style>
+</head>
+<body>
+
+<!-- PWA INSTALL BANNER -->
+<div class="install-banner hidden" id="installBanner">
+  <span>Install The Archive as an app for offline access</span>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn btn-primary btn-sm" id="installBtn">Install</button>
+    <button class="btn btn-sm" id="dismissBanner">Dismiss</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <div class="logo">THE ARCHIVE</div>
+    <div class="logo-sub">STORY CODEX  ┊ ✦ ┊  Starrcourt's Universe <span style="opacity:0.4;font-size:0.5rem">v1777391228</span></div>
+  </div>
+  <div class="header-btns">
+    <span class="save-indicator" id="saveIndicator">saved</span>
+    <button class="btn btn-sm" id="exportBtn">Export</button>
+    <label class="btn btn-sm" style="cursor:pointer">Import<input type="file" id="importFile" accept=".json" style="display:none"></label>
+    <button class="btn btn-sm" id="timelineBtn">&#10022; Timeline</button>
+    <button class="btn btn-sm" id="newCatBtn">+ Cat</button>
+    <button class="btn btn-primary btn-sm" id="newFicBtn">+ Fic</button>
+  </div>
+</header>
+
+<div class="fic-list" id="ficList"></div>
+<div class="main" id="main"></div>
+
+<!-- FULL SCREEN WRITE MODE -->
+<div class="write-screen" id="writeScreen">
+  <div class="write-toolbar">
+    <div class="write-toolbar-left">
+      <button class="fmt-btn" id="fmtUndo" title="Undo">&#8630;</button>
+      <button class="fmt-btn" id="fmtRedo" title="Redo">&#8631;</button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" id="fmtBold" title="Bold"><b>B</b></button>
+      <button class="fmt-btn" id="fmtItalic" title="Italic" style="font-style:italic;font-family:'Cormorant Garamond',serif;font-size:0.9rem;letter-spacing:0.05em"><i>I</i></button>
+      <button class="fmt-btn" id="fmtUnderline" title="Underline"><u>U</u></button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" id="fmtLeft" title="Align left">&#8676;</button>
+      <button class="fmt-btn" id="fmtCenter" title="Center">&#8596;</button>
+      <button class="fmt-btn" id="fmtRight" title="Align right">&#8677;</button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" id="fmtH1" title="Heading">H</button>
+      <button class="fmt-btn" id="fmtSep" title="Insert separator">𐃯</button>
+    </div>
+    <button class="btn btn-primary btn-sm" id="writeSaveBtn">Save &amp; Close</button>
+  </div>
+  <div class="write-meta" id="writeMeta"></div>
+  <div class="write-area-wrap">
+    <div class="write-area" id="writeArea" contenteditable="true" data-placeholder="Begin writing..."></div>
+  </div>
+  <div class="write-footer">
+    <div class="write-wc" id="writeWc">0 words</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--text-muted)">auto-saving...</div>
+  </div>
+</div>
+
+<!-- FIC MODAL -->
+<div class="overlay" id="ficModal">
+  <div class="modal">
+    <div class="modal-title" id="ficModalTitle">New Fic</div>
+    <div class="field-group"><label class="field-label">Title</label><input class="field-input" id="nf-title" placeholder="Untitled"></div>
+    <div class="field-group"><label class="field-label">Genre / Setting</label><input class="field-input" id="nf-genre" placeholder="e.g. Historical, Sci-Fi, Noir"></div>
+    <div class="field-group"><label class="field-label">Tagline</label><input class="field-input" id="nf-tagline" placeholder="One sentence pitch"></div>
+    <div class="field-group"><label class="field-label">Overview</label><textarea class="field-input" id="nf-overview" placeholder="What is this story about? Start a line with - for bullets."></textarea></div>
+    <div class="field-group"><label class="field-label">Themes (comma-separated)</label><input class="field-input" id="nf-themes" placeholder="e.g. grief, power, identity"></div>
+    <div class="field-group"><label class="field-label">Tone (comma-separated)</label><input class="field-input" id="nf-tone" placeholder="e.g. tragic, lyrical, dark"></div>
+    <div class="field-group"><label class="field-label">Tags (comma-separated)</label><input class="field-input" id="nf-tags" placeholder="e.g. slow burn, rivals-to-lovers"></div>
+    <div class="field-group"><label class="field-label">Dot Color</label><input class="field-input" id="nf-color" type="color" value="#c9a96e"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="deleteFicBtn" style="margin-right:auto;display:none;">Delete Fic</button>
+      <button class="btn" id="cancelFicBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitFicBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHARACTER MODAL -->
+<div class="overlay" id="charModal">
+  <div class="modal">
+    <div class="modal-title" id="charModalTitle">New Character</div>
+    <div class="field-group"><label class="field-label">Name</label><input class="field-input" id="nc-name" placeholder="Full name"></div>
+    <div class="field-group"><label class="field-label">Role</label><input class="field-input" id="nc-role" placeholder="e.g. Protagonist, Villain, Love Interest"></div>
+    <div class="field-group"><label class="field-label">Personality Traits (comma-separated)</label><input class="field-input" id="nc-traits" placeholder="e.g. sardonic, loyal, self-destructive"></div>
+    <div class="field-group"><label class="field-label">Goal / Motivation</label><textarea class="field-input" id="nc-goal" placeholder="What do they want? Start line with - for bullets."></textarea></div>
+    <div class="field-group"><label class="field-label">Internal Conflict</label><textarea class="field-input" id="nc-conflict" placeholder="What is tearing them apart?"></textarea></div>
+    <div class="field-group"><label class="field-label">Powers / Abilities</label><input class="field-input" id="nc-powers" placeholder="Leave blank if none"></div>
+    <div class="field-group"><label class="field-label">Notes</label><textarea class="field-input" id="nc-notes" placeholder="Anything else?"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="deleteCharBtn" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn" id="cancelCharBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitCharBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RELATIONSHIP MODAL -->
+<div class="overlay" id="relModal">
+  <div class="modal">
+    <div class="modal-title" id="relModalTitle">New Relationship</div>
+    <div class="field-group"><label class="field-label">Character A</label><input class="field-input" id="nr-a" placeholder="Name"></div>
+    <div class="field-group"><label class="field-label">Character B</label><input class="field-input" id="nr-b" placeholder="Name"></div>
+    <div class="field-group"><label class="field-label">Dynamic</label><textarea class="field-input" id="nr-desc" placeholder="How do they relate? Start line with - for bullets."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="deleteRelBtn" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn" id="cancelRelBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitRelBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORLD MODAL -->
+<div class="overlay" id="worldModal">
+  <div class="modal">
+    <div class="modal-title" id="worldModalTitle">New World Detail</div>
+    <div class="field-group"><label class="field-label">Label</label><input class="field-input" id="nw-label" placeholder="e.g. Setting, Era, Rules, Factions"></div>
+    <div class="field-group"><label class="field-label">Detail</label><textarea class="field-input" id="nw-val" placeholder="Describe it... Start line with - for bullets."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="deleteWorldBtn" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn" id="cancelWorldBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitWorldBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESEARCH MODAL -->
+<div class="overlay" id="researchModal">
+  <div class="modal">
+    <div class="modal-title">Pin Research</div>
+    <div class="field-group"><label class="field-label">Label / Title</label><input class="field-input" id="rs-label" placeholder="e.g. Roman toga reference, Achilles bust"></div>
+    <div class="field-group"><label class="field-label">Image URL (optional)</label><input class="field-input" id="rs-img" placeholder="https://..."></div>
+    <div class="field-group"><label class="field-label">Link URL (optional)</label><input class="field-input" id="rs-url" placeholder="https://..."></div>
+    <div class="field-group"><label class="field-label">Notes</label><textarea class="field-input" id="rs-note" placeholder="Why are you saving this?"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelResearchBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitResearchBtn">Pin</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div class="overlay" id="catModal">
+  <div class="modal">
+    <div class="modal-title">New Category</div>
+    <div class="field-group"><label class="field-label">Category Name</label><input class="field-input" id="cat-name" placeholder="e.g. Symbolism, Playlist, Arc Notes"></div>
+    <div class="field-group"><label class="field-label">Which fic?</label><select class="field-input" id="cat-fic"></select></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelCatBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitCatBtn">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM ENTRY MODAL -->
+<div class="overlay" id="customEntryModal">
+  <div class="modal">
+    <div class="modal-title" id="customEntryModalTitle">Add Entry</div>
+    <div class="field-group"><label class="field-label">Content</label><textarea class="field-input" id="ce-content" placeholder="Your notes... Start line with - for bullets." style="min-height:110px;"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="deleteCeBtn" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn" id="cancelCeBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitCeBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- FRAGMENT META MODAL (step 1) -->
+<div class="overlay" id="fragMetaModal">
+  <div class="modal frag-meta-modal">
+    <div class="modal-title" id="fragMetaTitle">New Fragment</div>
+    <div class="field-group"><label class="field-label">Title</label><input class="field-input" id="fr-title" placeholder="e.g. The Morning After, Chapter I"></div>
+    <div class="field-group"><label class="field-label">Status</label>
+      <select class="field-input" id="fr-status">
+        <option value="draft">Draft</option>
+        <option value="in-progress">In Progress</option>
+        <option value="polished">Polished</option>
+        <option value="scrapped">Scrapped</option>
+      </select>
+    </div>
+    <div class="field-group" id="ascendGroup" style="display:none">
+      <div class="ascend-box" id="ascendBox">
+        <div class="ascend-title">✦ Ascend to Chapter ✦</div>
+        <div class="ascend-desc">Mark this fragment as a finalized chapter. It will be elevated above all other statuses.</div>
+        <button type="button" class="btn ascend-btn" id="ascendToggleBtn">Bestow Chapter Status</button>
+      </div>
+    </div>
+    <div class="field-group"><label class="field-label">POV Character</label><input class="field-input" id="fr-pov" placeholder="e.g. Octavian, Omniscient"></div>
+    <div class="field-group"><label class="field-label">Created Date</label><input class="field-input" id="fr-created" placeholder="e.g. Apr 27, 2026 at 11:30 PM"><div class="field-hint">Edit if you wrote this before adding it here</div></div>
+    <div class="field-group"><label class="field-label">Scene Note</label><input class="field-input" id="fr-note" placeholder="e.g. The morning Caelius leaves. Pre-war."></div>
+    <div class="field-group" id="changeNoteGroup" style="display:none"><label class="field-label">Change Note (optional)</label><input class="field-input" id="fr-changenote" placeholder="e.g. Rewrote the ending, added Caelius POV shift"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="deleteFragBtn" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn" id="cancelFragMetaBtn">Cancel</button>
+      <button class="btn btn-sm" id="saveFragMetaBtn" style="display:none;">Save Changes</button>
+      <button class="btn btn-primary" id="nextFragBtn">Write &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- FRAGMENT DETAIL (read view) -->
+<div class="overlay" id="fragDetailModal">
+  <div class="frag-detail-modal" id="fragDetailContent"></div>
+</div>
+
+<!-- LOG PANEL -->
+<div class="log-overlay" id="logOverlay" onclick="closeLogPanel()"></div>
+<div class="log-panel" id="logPanel">
+  <div class="log-panel-header">
+    <div class="log-panel-title">Change Log</div>
+    <button class="log-panel-close" onclick="closeLogPanel()">&#x2715;</button>
+  </div>
+  <div class="log-panel-body" id="logPanelBody"></div>
+</div>
+
+<!-- CHARACTER DETAIL -->
+<div class="overlay" id="charDetailModal">
+  <div class="char-detail-modal" id="charDetailContent"></div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+var DEFAULT_FICS = [
+  {id:"oc",color:"#c9a96e",title:"Octavian & Caelius",genre:"Roman Historical Fiction",tagline:"A rivalry that became love. A love that became a ghost.",tags:["tragedy","rivals-to-lovers","historical","forgiveness"],tone:["tragic","lyrical","restrained"],themes:["fear vs love","unspoken forgiveness","legacy","the cost of ambition"],overview:"A Roman historical rivals-to-lovers tragedy. Caelius leaves not out of lack of love, but out of fear — and dies before forgiveness can reach him. The story lives in the space between what was said and what was felt.",characters:[{name:"Octavian",role:"Protagonist",traits:["calculating","proud","quietly tender"],goal:"Power, legacy — and underneath it all, to be known by someone without pretense.",conflict:"His public image demands coldness he does not entirely feel. He loved Caelius and never said so in time.",powers:"",notes:"More vulnerable than he lets on. The tragedy of him is the gap between who he is in public and who he becomes in private."},{name:"Caelius",role:"Protagonist / Love Interest",traits:["passionate","self-doubting","reckless in feeling"],goal:"To matter. To be loved without condition.",conflict:"Leaves the relationship out of fear, not lovelessness — and carries that guilt to his death.",powers:"",notes:"Dies without receiving the forgiveness Octavian would have given. The tragedy belongs equally to both of them."}],relationships:[{a:"Octavian",b:"Caelius",desc:"Rivals-to-lovers. Pride and fear kept them circling each other. The love was real but the timing was always wrong — and then it was too late."}],world:[{label:"Setting",val:"Ancient Rome — the political and personal often bleed into each other."},{label:"Structure",val:"Tragedy. The ending is baked into the beginning."},{label:"Tone",val:"Lyrical, restrained, heavy with subtext. What characters do not say matters more than what they do."}],research:[],writing:[],customCats:[]},
+  {id:"iye",color:"#c96e8a",title:"In Your Eyes",genre:"Contemporary / Literary Fiction",tagline:"Ellis sees everyone. No one sees Ellis.",tags:["character study","intimacy","identity","literary"],tone:["intimate","unflinching","quiet"],themes:["visibility","intimacy vs transaction","self-perception","desire"],overview:"A character study centered on Ellis, a sex worker. The story is less about the work and more about who Ellis is underneath it — what they want, what they guard, and what intimacy actually means to them.",characters:[{name:"Ellis",role:"Protagonist",traits:["perceptive","self-contained","wry","quietly aching"],goal:"To be seen — truly seen — not as a role or a service but as a person.",conflict:"Occupational intimacy has made Ellis an expert at reading people, but made genuine vulnerability feel impossible.",powers:"",notes:"The soul comes first here. Ellis is the entire story."}],relationships:[],world:[{label:"Focus",val:"Character interiority above all. The external world is secondary."},{label:"Conflict Type",val:"Internal. Ellis vs. Ellis."}],research:[],writing:[],customCats:[]},
+  {id:"lag",color:"#7c6fcd",title:"The Lyceum and the Garden",genre:"Historical / Philosophical Fiction",tagline:"Two minds that should not have met. Two men who could not stop.",tags:["historical","philosophical","rivals-to-lovers","slow burn"],tone:["intellectual","sensual","slow","achingly deliberate"],themes:["philosophy as intimacy","the examined life","opposing worldviews","desire disguised as debate"],overview:"Aristotle x Epicurus. Two philosophical giants whose schools directly opposed each other — drawn together despite that opposition. Debate becomes desire. Argument becomes devotion.",characters:[{name:"Aristotle",role:"Protagonist",traits:["rigorous","proud","structured","secretly hungry for disruption"],goal:"To understand everything. To categorize the world. To be the smartest man in the room.",conflict:"Epicurus unsettles him — philosophically and personally. He cannot categorize this.",powers:"",notes:"POV character. The Lyceum is his domain; Epicurus is an intrusion he does not know how to process."},{name:"Epicurus",role:"Protagonist / Love Interest",traits:["gentle","iconoclastic","warm","unmoveable in his quiet way"],goal:"Ataraxia — peace of mind. A life well-examined with people worth loving.",conflict:"He represents everything Aristotle's system cannot contain.",powers:"",notes:"Al's own philosophical leanings. He does not argue to win — he argues because he cares."}],relationships:[{a:"Aristotle",b:"Epicurus",desc:"Intellectual rivals. The attraction lives in the friction — each represents what the other secretly wants but cannot admit needing."}],world:[{label:"Setting",val:"Ancient Greece. The Lyceum and The Garden as physical and philosophical spaces."},{label:"Structure",val:"Slow burn. The debate is the courtship."},{label:"Central Tension",val:"Aristotle's structured system vs. Epicurus's philosophy of ataraxia and friendship."}],research:[],writing:[],customCats:[]},
+  {id:"poi",color:"#6e8ac9",title:"Persons of Interest",genre:"Superhero Noir",tagline:"Two broken people carrying the weight of a broken city.",tags:["superhero","noir","dual protagonists","moral complexity"],tone:["gritty","cinematic","noir","emotionally dense"],themes:["vigilante justice vs systemic failure","rage as protection","trauma and chosen partnership","what it costs to be the good guy"],overview:"Set in the port city of Crestfall. Dual protagonists: Corvax Calloway (Wrath) and Maxine Lacroix (Wraith). One runs on rage. One runs on ghosts. Together they are more dangerous than either alone — and more vulnerable too.",characters:[{name:"Corvax Calloway",role:"Protagonist — Wrath",traits:["volatile","fiercely loyal","self-destructive","genuinely tender underneath"],goal:"Justice. Specifically, the kind the system will not deliver.",conflict:"His power is tied to his rage. Controlling one means controlling the other — which he has never been good at.",powers:"Super strength, invulnerability, danger sense",notes:"Corvax's anger is a grief response, not just a personality trait."},{name:"Maxine Lacroix",role:"Protagonist — Wraith",traits:["precise","emotionally guarded","dry humor","haunted"],goal:"To keep her grip on reality. To do good without losing herself.",conflict:"Astral projection means she is always partly somewhere else. The line between her and the world she observes gets thinner over time.",powers:"Telekinesis, astral projection, clairvoyance",notes:"Her clairvoyance makes intimacy complicated — she sometimes knows things people have not said yet."},{name:"Apex",role:"Villain",traits:["adaptive","coldly strategic","envious of fixity"],goal:"Absolute power. Specifically, other people's power.",conflict:"Has absorbed so many abilities he has lost a stable sense of self — and is furious about it.",powers:"Shapeshifting, power absorption",notes:"The thematic shadow of the protagonists — a person undone by having too much rather than too little."}],relationships:[{a:"Corvax",b:"Maxine",desc:"Chosen partners — in the vigilante sense and potentially the personal sense. They work because their powers and personalities are complementary opposites."},{a:"Corvax and Maxine",b:"Apex",desc:"Cat-and-mouse with genuine stakes. Apex represents what unchecked power does to a person."}],world:[{label:"City",val:"Crestfall — a port city with the grime and moral ambiguity that implies."},{label:"Genre Feel",val:"Superhero story told through a noir lens. Shadowy, cinematic, high emotional stakes."},{label:"Tone Rule",val:"The powers matter less than the people. The action serves the character arcs."}],research:[],writing:[],customCats:[]},
+  {id:"unc",color:"#6ec98a",title:"Unconquered",genre:"Historical Fiction",tagline:"He conquered the world. The world did not conquer him. What did?",tags:["historical","epic","character study","power"],tone:["epic","intimate","fatalistic"],themes:["the cost of greatness","mortality and myth","longing vs legacy","what lies beyond conquest"],overview:"Alexander the Great — but the interior version. Less the conqueror of nations and more the man inside the myth. What does it mean to have everything and still feel the horizon pulling you forward?",characters:[{name:"Alexander",role:"Protagonist",traits:["magnetic","insatiable","mythologizing","achingly lonely"],goal:"To reach the edge of the world. And then — he does not know.",conflict:"He has built his identity entirely on forward motion. Stopping — even in grief, even in love — feels like death.",powers:"",notes:"The tragedy is that the world could not contain him and he could not contain himself."}],relationships:[],world:[{label:"Setting",val:"The ancient world — from Macedonia across Persia to the edges of the known map."},{label:"Focus",val:"Interior. The campaigns are the backdrop; the inner life is the story."}],research:[],writing:[],customCats:[]},
+  {id:"rem",color:"#c96e6e",title:"Remnants",genre:"Cosmic Horror / Literary",tagline:"Some things should not be looked at directly.",tags:["cosmic horror","literary","existential","dread"],tone:["dread-soaked","beautiful","slow-burn horror","philosophical"],themes:["the unknowable","human smallness","grief and dissolution","what we leave behind"],overview:"Nathan Hargrove and Soren Dahl orbit something they cannot name — Aevurn, a deity that does not fit human categories of good or evil. Cosmic horror taken seriously: not monsters, but the terror of scale.",characters:[{name:"Nathan Hargrove",role:"Protagonist",traits:["methodical","quietly desperate","holding it together barely"],goal:"To understand what is happening. To survive it. To not lose Soren in the process.",conflict:"The closer he gets to understanding, the more he realizes understanding is the wrong goal.",powers:"",notes:""},{name:"Soren Dahl",role:"Protagonist / Anchor",traits:["intuitive","calm in unsettling ways","drawn toward the unknowable"],goal:"To let go of fear. To face Aevurn without flinching — even if it costs him.",conflict:"His calm in the face of the incomprehensible is either peace or denial. Neither Nathan nor Soren knows which.",powers:"",notes:""},{name:"Aevurn",role:"Deity / Force",traits:["incomprehensible","not malevolent — simply vast","indifferent in a way that terrifies more than cruelty would"],goal:"Unknown. Possibly goalless.",conflict:"Exists outside human narrative categories entirely.",powers:"Reality distortion, dissolution, presence",notes:"Not a villain. Something far more unsettling: a thing that does not notice you."}],relationships:[{a:"Nathan",b:"Soren",desc:"Anchors for each other. Their relationship is the only stable thing in an increasingly unstable world."},{a:"Nathan and Soren",b:"Aevurn",desc:"Asymmetric — the deity is not in a relationship with them. They are in a relationship with the fact of it."}],world:[{label:"Tone Reference",val:"Cosmic horror taken seriously. Not cheap scares — existential dread."},{label:"Aevurn",val:"A deity without human-legible motivation. Not evil. Simply incomprehensibly Other."},{label:"Central Question",val:"What do you do with a universe that does not care? What do you do with a person who does?"}],research:[],writing:[],customCats:[]},
+  {id:"us",color:"#d4a855",title:"Unyielding Siege",genre:"Greek Historical Fiction",tagline:"Same war. Two truths. Both of them fatal.",tags:["greek","dual POV","tragedy","hubris"],tone:["epic","brutal","elegiac"],themes:["hubris as downfall","power vs glory","the price of pride","legacy without love"],overview:"Agamemnon and Achilles. Dual POV — same war, two entirely different truths. Agamemnon is power: he has no person inside him that is not king. Achilles has love, has Patroclus — and chooses glory anyway. Both are undone by hubris, but differently.",characters:[{name:"Agamemnon",role:"Protagonist (POV 1)",traits:["commanding","brittle","incapable of smallness","power as identity"],goal:"Victory. Legacy. To be remembered as the man who took Troy.",conflict:"Power is his only person. There is no Agamemnon beneath the king — and that absence is the tragedy.",powers:"",notes:"No romantic angle. His downfall is purely about authority and its limits."},{name:"Achilles",role:"Protagonist (POV 2)",traits:["glorious","tender","reckless","aware of his own myth"],goal:"To be remembered forever. To burn bright enough that the world cannot forget him.",conflict:"He has love — Patroclus — and he chooses glory instead. Then he loses everything.",powers:"",notes:"The tragedy is that Achilles knew. He chose anyway. That choice is everything."}],relationships:[{a:"Agamemnon",b:"Achilles",desc:"Neither respects the other's claim to authority. Their conflict is inevitable — two kinds of pride that cannot share a stage."},{a:"Achilles",b:"Patroclus",desc:"The love that Achilles sacrifices for glory. Patroclus is the person Achilles could have chosen over myth — and did not."}],world:[{label:"Setting",val:"The Trojan War. The siege of Troy as backdrop to two interior collapses."},{label:"Structure",val:"Dual POV — same events, two entirely different experiences of them."},{label:"Greek Universe",val:"Part of the same universe as Unconquered and The Lyceum and the Garden."},{label:"Central Thesis",val:"Hubris destroys both men — but differently. Agamemnon has no self beneath the crown. Achilles has a self and burns it."}],research:[],writing:[],customCats:[]}
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var STORAGE_KEY = "the-archive-v3";
+var state = { fics: [], activeFicId: "oc", tab: "overview" };
+var editCtx = {};
+var writeCtx = {};
+var deferredInstallPrompt = null;
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var saved = JSON.parse(raw);
+      saved.fics.forEach(function(f) {
+        if (!f.research) f.research = [];
+        if (!f.writing) f.writing = [];
+        if (!f.customCats) f.customCats = [];
+      });
+      state.fics = saved.fics;
+      state.activeFicId = saved.activeFicId || saved.fics[0].id;
+    } else {
+      state.fics = JSON.parse(JSON.stringify(DEFAULT_FICS));
+    }
+  } catch(e) { state.fics = JSON.parse(JSON.stringify(DEFAULT_FICS)); }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ fics: state.fics, activeFicId: state.activeFicId }));
+    var ind = document.getElementById("saveIndicator");
+    ind.classList.add("show");
+    setTimeout(function() { ind.classList.remove("show"); }, 1400);
+  } catch(e) {}
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getFic() {
+  for (var i = 0; i < state.fics.length; i++) {
+    if (state.fics[i].id === state.activeFicId) return state.fics[i];
+  }
+  return state.fics[0];
+}
+function h(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function renderText(s) {
+  var lines = String(s||"").split("\n"); var out = ""; var inList = false;
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i].trim();
+    if (l.indexOf("- ") === 0 || l === "-") {
+      if (!inList) { out += "<ul>"; inList = true; }
+      out += "<li>" + h(l.replace(/^-\s*/,"")) + "</li>";
+    } else {
+      if (inList) { out += "</ul>"; inList = false; }
+      if (l) out += "<p style='margin-bottom:0.15rem'>" + h(l) + "</p>";
+    }
+  }
+  if (inList) out += "</ul>";
+  return out || h(s);
+}
+function csv(id) { return v(id).split(",").map(function(s){return s.trim();}).filter(Boolean); }
+function v(id) { var el=document.getElementById(id); return el?el.value.trim():""; }
+function clr(ids) { ids.forEach(function(id){var el=document.getElementById(id);if(el)el.value="";}); }
+function setVal(id,val) { var el=document.getElementById(id); if(el)el.value=val||""; }
+function todayStr() {
+  var d=new Date(); var mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return mo[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();
+}
+function nowStr() {
+  var d=new Date(); var mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var hr=d.getHours(); var m=d.getMinutes(); var ampm=hr>=12?"PM":"AM";
+  hr=hr%12; if(hr===0)hr=12;
+  return mo[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear()+" at "+hr+":"+(m<10?"0":"")+m+" "+ampm;
+}
+function groupSessionsByDate(sessions) {
+  var groups = {};
+  var order = [];
+  sessions.forEach(function(s) {
+    // Extract date part from startTime e.g. "Apr 28, 2026 at 9:01 AM" -> "Apr 28, 2026"
+    var datePart = s.startTime ? s.startTime.split(" at ")[0] : "Unknown";
+    if (!groups[datePart]) { groups[datePart] = []; order.push(datePart); }
+    groups[datePart].push(s);
+  });
+  return { groups: groups, order: order };
+}
+
+function openLogPanel(fr) {
+  var body = document.getElementById("logPanelBody");
+  var allSessions = fr.sessions && fr.sessions.length ? fr.sessions : [];
+  var oldEntries = fr.changelog && fr.changelog.length ? fr.changelog : [];
+  if(!allSessions.length && !oldEntries.length) {
+    body.innerHTML = '<div class="log-panel-empty">No changes recorded yet.<br>Start writing to see your session history here.</div>';
+  } else {
+    var html2 = "";
+    var grouped = groupSessionsByDate(allSessions);
+    grouped.order.slice().reverse().forEach(function(date){
+      var daySessions = grouped.groups[date].slice().reverse();
+      var dayWcStart = daySessions[daySessions.length-1].wcStart;
+      var dayWcEnd = daySessions[0].wcEnd;
+      var dayDiff = dayWcEnd - dayWcStart;
+      var diffStr = dayDiff > 0 ? "+"+dayDiff : dayDiff < 0 ? String(dayDiff) : "no change";
+      var diffColor = dayDiff > 0 ? "var(--green,#6ec98a)" : dayDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
+      html2 += '<div class="changelog-day">' +
+        '<div class="changelog-day-header" onclick="toggleDay(this)">' +
+          '<span class="changelog-day-date">'+h(date)+'</span>' +
+          '<span class="changelog-day-meta">'+daySessions.length+' session'+(daySessions.length!==1?"s":"")+'</span>' +
+          '<span style="color:'+diffColor+';font-family:JetBrains Mono,monospace;font-size:0.6rem">'+diffStr+' words</span>' +
+          '<span class="changelog-day-arrow">&#9654;</span>' +
+        '</div>' +
+        '<div class="changelog-day-entries" style="display:none">' +
+          daySessions.map(function(s){
+            var dur = "";
+            if(s.startTime && s.endTime && s.startTime !== s.endTime){
+              var st = s.startTime.split(" at ")[1]||s.startTime;
+              var et = s.endTime.split(" at ")[1]||s.endTime;
+              dur = st + " – " + et;
+            } else {
+              dur = (s.startTime||"").split(" at ")[1]||s.startTime||"";
+            }
+            var wDiff = s.wcEnd - s.wcStart;
+            var wStr = wDiff > 0 ? "+"+wDiff : wDiff < 0 ? String(wDiff) : "no change";
+            var wColor = wDiff > 0 ? "var(--green,#6ec98a)" : wDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
+            return '<div class="changelog-session">' +
+              '<div class="changelog-session-time">'+h(dur)+'</div>' +
+              '<div class="changelog-session-wc" style="color:'+wColor+'">'+wStr+' words</div>' +
+              (s.note?'<div class="changelog-note">&ldquo;'+h(s.note)+'&rdquo;</div>':"")+
+              '</div>';
+          }).join("")+
+        '</div></div>';
+    });
+    // Old metadata entries
+    var metaEntries = oldEntries.filter(function(e){
+      return !(e.changes&&e.changes[0]==="Writing session");
+    });
+    if(metaEntries.length){
+      html2 += '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)">' +
+        '<div style="font-family:JetBrains Mono,monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem">Metadata Changes</div>' +
+        metaEntries.slice().reverse().map(function(e){
+          return '<div class="changelog-entry">' +
+            '<div class="changelog-time">'+h(e.time)+'</div>' +
+            '<div class="changelog-detail">'+e.changes.map(function(c){return h(c);}).join(" &middot; ")+'</div>' +
+            (e.note?'<div class="changelog-note">&ldquo;'+h(e.note)+'&rdquo;</div>':"")+
+            '</div>';
+        }).join("")+
+      '</div>';
+    }
+    body.innerHTML = html2;
+  }
+  document.getElementById("logPanel").classList.add("open");
+  document.getElementById("logOverlay").classList.add("open");
+}
+
+function closeLogPanel() {
+  document.getElementById("logPanel").classList.remove("open");
+  document.getElementById("logOverlay").classList.remove("open");
+}
+
+function toggleDay(header) {
+  var entries = header.nextElementSibling;
+  var arrow = header.querySelector(".changelog-day-arrow");
+  if(entries.style.display === "none") {
+    entries.style.display = "block";
+    if(arrow) arrow.classList.add("open");
+  } else {
+    entries.style.display = "none";
+    if(arrow) arrow.classList.remove("open");
+  }
+}
+
+function toggleChangelog(btn, count) {
+  var entries = document.getElementById("changelogEntries");
+  if (!entries) return;
+  if (entries.style.display === "none") {
+    entries.style.display = "block";
+    btn.textContent = "Hide Change Log";
+  } else {
+    entries.style.display = "none";
+    btn.textContent = "View Change Log (" + count + ")";
+  }
+}
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+function getCatById(fic,id) { for(var i=0;i<fic.customCats.length;i++){if(fic.customCats[i].id===id)return fic.customCats[i];} return null; }
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() { renderFicList(); renderMain(); }
+
+function renderFicList() {
+  var html = state.fics.map(function(f) {
+    return '<div class="fic-tab'+(f.id===state.activeFicId?" active":"")+'" data-fid="'+h(f.id)+'">' +
+      '<div class="fic-dot" style="background:'+h(f.color)+'"></div>' +
+      '<div><div class="fic-tab-name">'+h(f.title)+'</div><div class="fic-tab-genre">'+h(f.genre)+'</div></div></div>';
+  }).join("");
+  document.getElementById("ficList").innerHTML = html;
+  document.getElementById("ficList").querySelectorAll(".fic-tab").forEach(function(el) {
+    el.addEventListener("click", function() { state.activeFicId=el.getAttribute("data-fid"); state.tab="overview"; render(); });
+    el.setAttribute("draggable","true");
+    el.addEventListener("dragstart",function(e){e.dataTransfer.setData("text/plain",el.getAttribute("data-fid"));el.classList.add("dragging");});
+    el.addEventListener("dragend",function(){el.classList.remove("dragging");document.querySelectorAll(".fic-tab").forEach(function(t){t.classList.remove("drag-over");});});
+    el.addEventListener("dragover",function(e){e.preventDefault();el.classList.add("drag-over");});
+    el.addEventListener("dragleave",function(){el.classList.remove("drag-over");});
+    el.addEventListener("drop",function(e){
+      e.preventDefault();el.classList.remove("drag-over");
+      var fromId=e.dataTransfer.getData("text/plain");
+      var toId=el.getAttribute("data-fid");
+      if(fromId===toId)return;
+      var fromIdx=-1,toIdx=-1;
+      for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===fromId)fromIdx=i;if(state.fics[i].id===toId)toIdx=i;}
+      if(fromIdx<0||toIdx<0)return;
+      var moved=state.fics.splice(fromIdx,1)[0];
+      state.fics.splice(toIdx,0,moved);
+      saveData();render();
+    });
+  });
+}
+
+function renderMain() {
+  var fic = getFic();
+  var tagsHtml = fic.tags.map(function(t){return '<span class="tag">'+h(t)+'</span>';}).join("") +
+                 fic.tone.map(function(t){return '<span class="tag p">'+h(t)+'</span>';}).join("");
+  var tabNames = ["overview","characters","relationships","world","writing","research"];
+  if (fic.customCats) fic.customCats.forEach(function(cat){tabNames.push("cat:"+cat.id);});
+  var tabsHtml = tabNames.map(function(t) {
+    var label = t.indexOf("cat:")===0 ? (getCatById(fic,t.replace("cat:",""))||{name:t}).name : t;
+    return '<button class="tab'+(state.tab===t?" active":"")+'" data-tab="'+t+'">'+h(label)+'</button>';
+  }).join("");
+  document.getElementById("main").innerHTML =
+    '<div class="fic-header">' +
+    '<div class="fic-eyebrow">'+h(fic.genre)+'</div>' +
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem">' +
+    '<div class="fic-name">'+h(fic.title)+'</div>' +
+    '<button class="btn btn-sm" id="editFicBtn" style="flex-shrink:0;margin-top:0.35rem">Edit</button></div>' +
+    '<div class="fic-tagline">&ldquo;'+h(fic.tagline)+'&rdquo;</div>' +
+    '<div class="tag-row">'+tagsHtml+'</div></div>' +
+    '<div class="tabs">'+tabsHtml+'</div>' +
+    '<div id="tabContent"></div>';
+  document.getElementById("editFicBtn").addEventListener("click", openEditFic);
+  document.getElementById("main").querySelectorAll(".tab").forEach(function(el) {
+    el.addEventListener("click", function() { state.tab=el.getAttribute("data-tab"); renderMain(); });
+  });
+  renderTab();
+}
+
+function renderTab() {
+  var fic = getFic(); var el = document.getElementById("tabContent"); var html = "";
+  if (state.tab==="overview") {
+    var th=fic.themes.map(function(t){return '<span class="tag a">'+h(t)+'</span>';}).join("");
+    var tn=fic.tone.map(function(t){return '<span class="tag p">'+h(t)+'</span>';}).join("");
+    html='<div class="section"><div class="section-title">Overview</div><div class="section-body">'+renderText(fic.overview)+'</div></div>'+
+         '<div class="section"><div class="section-title">Central Themes</div><div class="tag-row">'+th+'</div></div>'+
+         '<div class="section"><div class="section-title">Tone</div><div class="tag-row">'+tn+'</div></div>';
+  } else if (state.tab==="characters") {
+    var cards=fic.characters.length===0?'<div class="empty">No characters yet.</div>':'<div class="char-grid">';
+    fic.characters.forEach(function(c,i){
+      var tr=c.traits.map(function(t){return '<span class="char-trait">'+h(t)+'</span>';}).join("");
+      cards+='<div class="char-card" data-ci="'+i+'"><div class="char-name">'+h(c.name)+'</div><div class="char-role">'+h(c.role)+'</div>'+(c.powers?'<div class="char-role" style="color:var(--accent2)">'+h(c.powers)+'</div>':'')+'<div class="char-traits">'+tr+'</div></div>';
+    });
+    if(fic.characters.length>0)cards+="</div>";
+    html='<div class="section"><div class="section-title"><span class="section-title-left">Characters</span><button class="btn btn-sm" id="addCharBtn">+ Add</button></div>'+cards+'</div>';
+  } else if (state.tab==="relationships") {
+    var rels=fic.relationships.length===0?'<div class="empty">No relationships mapped yet.</div>':'<div class="rel-list">';
+    fic.relationships.forEach(function(r,i){
+      rels+='<div class="rel-item"><div class="rel-item-content"><div class="rel-pair">'+h(r.a)+' &times; '+h(r.b)+'</div><div class="rel-desc">'+renderText(r.desc)+'</div></div><div class="item-actions"><button class="btn btn-sm" data-ri="'+i+'">Edit</button></div></div>';
+    });
+    if(fic.relationships.length>0)rels+="</div>";
+    html='<div class="section"><div class="section-title"><span class="section-title-left">Relationships</span><button class="btn btn-sm" id="addRelBtn">+ Add</button></div>'+rels+'</div>';
+  } else if (state.tab==="world") {
+    var w=fic.world.length===0?'<div class="empty">No world details yet.</div>':"";
+    fic.world.forEach(function(wd,i){
+      w+='<div class="world-item"><div class="world-item-content"><div class="world-label">'+h(wd.label)+'</div><div class="world-val">'+renderText(wd.val)+'</div></div><div class="item-actions"><button class="btn btn-sm" data-wi="'+i+'">Edit</button></div></div>';
+    });
+    html='<div class="section"><div class="section-title"><span class="section-title-left">World &amp; Setting</span><button class="btn btn-sm" id="addWorldBtn">+ Add</button></div>'+w+'</div>';
+  } else if (state.tab==="writing") {
+    var frags=fic.writing&&fic.writing.length>0;
+    var totalWords=0; var fragHtml="";
+    if(frags){
+      fic.writing.forEach(function(fr,i){
+        var wc=0;if(fr.content){var td=document.createElement("div");td.innerHTML=fr.content;wc=(td.textContent||td.innerText||"").trim().split(/\s+/).filter(function(w){return w.length>0;}).length;}
+        totalWords+=wc;
+        var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
+        var tmpDiv=document.createElement("div");tmpDiv.innerHTML=fr.content||"";var preview=(tmpDiv.textContent||tmpDiv.innerText||"").trim().substring(0,180);
+        var statusLabel=fr.status==="chapter"?'<span class="status-chapter" style="color:var(--accent2)">✦ Chapter ✦</span>':h(fr.status||"draft");
+        fragHtml+='<div class="frag-card" data-fri="'+i+'">' +
+          '<div class="frag-card-header">' +
+          '<div><div class="frag-title">'+h(fr.title||"Untitled Fragment")+'</div>' +
+          '<div class="frag-meta"><span style="color:'+sc+'">'+statusLabel+'</span>'+(fr.pov?' &middot; POV: '+h(fr.pov):'')+' &middot; '+wc+' words &middot; '+h(fr.createdAt||"")+(fr.updatedAt?' &middot; edited '+h(fr.updatedAt):'')+'</div>'+(fr.note?'<div class="frag-note">'+h(fr.note)+'</div>':'')+'</div>' +
+          '<button class="btn btn-sm frag-edit-btn" data-fri="'+i+'">Edit</button></div>' +
+          '<div class="frag-preview">'+h(preview)+(preview.length===180?"...":"")+'</div></div>';
+      });
+    }
+    var stats=frags?'<div class="writing-stats"><span>'+fic.writing.length+' fragment'+(fic.writing.length!==1?"s":"")+'</span><span>'+totalWords+' words total</span></div>':"";
+    html='<div class="section"><div class="section-title"><span class="section-title-left">Writing</span><button class="btn btn-sm" id="addFragBtn">+ Fragment</button></div>'+stats+(frags?fragHtml:'<div class="empty">No fragments yet. Start writing.</div>')+'</div>';
+  } else if (state.tab==="research") {
+    var res=fic.research&&fic.research.length>0?'<div class="research-grid">':"";
+    if(fic.research&&fic.research.length>0){
+      fic.research.forEach(function(r,i){
+        res+='<div class="research-card"><button class="research-delete" data-res="'+i+'" title="Remove">&#x2715;</button>'+(r.img?'<img class="research-img" src="'+h(r.img)+'" alt="'+h(r.label)+'" onerror="this.style.display=\'none\'">':'<div class="research-img-placeholder">no image</div>')+'<div class="research-label">'+h(r.label)+'</div>'+(r.note?'<div class="research-note">'+h(r.note)+'</div>':'')+(r.url?'<div class="research-link"><a href="'+h(r.url)+'" target="_blank" rel="noopener">'+h(r.url.length>38?r.url.substring(0,38)+"...":r.url)+'</a></div>':'')+'</div>';
+      });
+      res+='</div>';
+    } else { res='<div class="empty">No research pinned yet.</div>'; }
+    html='<div class="section"><div class="section-title"><span class="section-title-left">Research &amp; References</span><button class="btn btn-sm" id="addResBtn">+ Pin</button></div>'+res+'</div>';
+  } else if (state.tab.indexOf("cat:")===0) {
+    var catId=state.tab.replace("cat:",""); var cat=getCatById(fic,catId);
+    if(cat){
+      var entries=cat.entries&&cat.entries.length>0?"":"<div class='empty'>No entries yet.</div>";
+      if(cat.entries)cat.entries.forEach(function(e,i){entries+='<div class="custom-entry"><div class="custom-entry-body">'+renderText(e.content)+'</div><div class="item-actions"><button class="btn btn-sm" data-cei="'+i+'">Edit</button></div></div>';});
+      html='<div class="section"><div class="section-title"><span class="section-title-left">'+h(cat.name)+'</span><div style="display:flex;gap:0.35rem"><button class="btn btn-danger btn-sm" id="deleteCatBtn">Delete</button><button class="btn btn-sm" id="addCeBtn">+ Add</button></div></div>'+entries+'</div>';
+    }
+  }
+  el.innerHTML = html;
+  bindTabEvents(fic);
+}
+
+function bindTabEvents(fic) {
+  try {
+  var b; 
+  b=document.getElementById("addCharBtn"); if(b)b.addEventListener("click",function(){openNewChar();});
+  document.querySelectorAll(".char-card").forEach(function(el){el.addEventListener("click",function(){openCharDetail(parseInt(el.getAttribute("data-ci")));});});
+  b=document.getElementById("addRelBtn"); if(b)b.addEventListener("click",function(){openNewRel();});
+  document.querySelectorAll("[data-ri]").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();openEditRel(parseInt(el.getAttribute("data-ri")));});});
+  b=document.getElementById("addWorldBtn"); if(b)b.addEventListener("click",function(){openNewWorld();});
+  document.querySelectorAll("[data-wi]").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();openEditWorld(parseInt(el.getAttribute("data-wi")));});});
+  b=document.getElementById("addFragBtn"); if(b)b.addEventListener("click",function(){openNewFrag();});
+  document.querySelectorAll(".frag-edit-btn").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();openEditFragMeta(parseInt(el.getAttribute("data-fri")));});});
+  document.querySelectorAll(".frag-card").forEach(function(el){
+    el.addEventListener("click",function(){openFragDetail(parseInt(el.getAttribute("data-fri")));});
+    // drag reorder
+    el.setAttribute("draggable","true");
+    el.addEventListener("dragstart",function(e){e.dataTransfer.setData("text/plain",el.getAttribute("data-fri"));el.classList.add("dragging");});
+    el.addEventListener("dragend",function(){el.classList.remove("dragging");document.querySelectorAll(".frag-card").forEach(function(c){c.classList.remove("drag-over");});});
+    el.addEventListener("dragover",function(e){e.preventDefault();el.classList.add("drag-over");});
+    el.addEventListener("dragleave",function(){el.classList.remove("drag-over");});
+    el.addEventListener("drop",function(e){
+      e.preventDefault();el.classList.remove("drag-over");
+      var from=parseInt(e.dataTransfer.getData("text/plain"));
+      var to=parseInt(el.getAttribute("data-fri"));
+      if(from===to)return;
+      var writing=getFic().writing;
+      var moved=writing.splice(from,1)[0];
+      writing.splice(to,0,moved);
+      saveData();renderMain();
+    });
+  });
+  b=document.getElementById("addResBtn"); if(b)b.addEventListener("click",function(){openModal("researchModal");});
+  document.querySelectorAll("[data-res]").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();getFic().research.splice(parseInt(el.getAttribute("data-res")),1);saveData();renderMain();});});
+  b=document.getElementById("addCeBtn"); if(b)b.addEventListener("click",function(){openNewCe();});
+  document.querySelectorAll("[data-cei]").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();openEditCe(parseInt(el.getAttribute("data-cei")));});});
+  b=document.getElementById("deleteCatBtn"); if(b)b.addEventListener("click",function(){var catId=state.tab.replace("cat:","");getFic().customCats=getFic().customCats.filter(function(c){return c.id!==catId;});state.tab="overview";saveData();render();});
+  } catch(e) { console.error("bindTabEvents error:", e.message, e.stack); }
+}
+
+// ── FIC CRUD ──────────────────────────────────────────────────────────────────
+function openNewFic(){editCtx={mode:"new"};document.getElementById("ficModalTitle").textContent="New Fic";document.getElementById("deleteFicBtn").style.display="none";clr(["nf-title","nf-genre","nf-tagline","nf-overview","nf-themes","nf-tone","nf-tags"]);document.getElementById("nf-color").value="#c9a96e";openModal("ficModal");}
+function openEditFic(){var fic=getFic();editCtx={mode:"edit",id:fic.id};document.getElementById("ficModalTitle").textContent="Edit Fic";document.getElementById("deleteFicBtn").style.display="inline-flex";setVal("nf-title",fic.title);setVal("nf-genre",fic.genre);setVal("nf-tagline",fic.tagline);setVal("nf-overview",fic.overview);setVal("nf-themes",fic.themes.join(", "));setVal("nf-tone",fic.tone.join(", "));setVal("nf-tags",fic.tags.join(", "));document.getElementById("nf-color").value=fic.color||"#c9a96e";openModal("ficModal");}
+
+
+
+function openNewChar(){editCtx={mode:"new"};document.getElementById("charModalTitle").textContent="New Character";document.getElementById("deleteCharBtn").style.display="none";clr(["nc-name","nc-role","nc-traits","nc-goal","nc-conflict","nc-powers","nc-notes"]);openModal("charModal");}
+
+function openEditChar(idx){var c=getFic().characters[idx];editCtx={mode:"edit",idx:idx};document.getElementById("charModalTitle").textContent="Edit Character";document.getElementById("deleteCharBtn").style.display="inline-flex";setVal("nc-name",c.name);setVal("nc-role",c.role);setVal("nc-traits",c.traits.join(", "));setVal("nc-goal",c.goal);setVal("nc-conflict",c.conflict);setVal("nc-powers",c.powers);setVal("nc-notes",c.notes);openModal("charModal");}
+
+function openCharDetail(idx){var c=getFic().characters[idx];document.getElementById("charDetailContent").innerHTML='<div class="cd-header-row"><div class="cd-name">'+h(c.name)+'</div><div class="cd-btns"><button class="btn btn-sm" id="editCharFromDetail">Edit</button><button class="btn btn-sm" id="closeCharDetail">Close</button></div></div><div class="cd-role">'+h(c.role)+'</div>'+(c.powers?'<div class="cd-role" style="color:var(--accent2);margin-top:-0.4rem;margin-bottom:0.9rem">'+h(c.powers)+'</div>':'')+'<div class="cd-section"><div class="cd-label">Personality</div><div class="cd-body">'+h(c.traits.join(" · "))+'</div></div><div class="cd-section"><div class="cd-label">Goal / Motivation</div><div class="cd-body">'+renderText(c.goal)+'</div></div><div class="cd-section"><div class="cd-label">Internal Conflict</div><div class="cd-body">'+renderText(c.conflict)+'</div></div>'+(c.notes?'<div class="cd-section"><div class="cd-label">Notes</div><div class="cd-body">'+renderText(c.notes)+'</div></div>':"");openModal("charDetailModal");document.getElementById("closeCharDetail").addEventListener("click",function(){closeModal("charDetailModal");});document.getElementById("editCharFromDetail").addEventListener("click",function(){closeModal("charDetailModal");openEditChar(idx);});}
+
+function openNewRel(){editCtx={mode:"new"};document.getElementById("relModalTitle").textContent="New Relationship";document.getElementById("deleteRelBtn").style.display="none";clr(["nr-a","nr-b","nr-desc"]);openModal("relModal");}
+
+function openEditRel(idx){var r=getFic().relationships[idx];editCtx={mode:"edit",idx:idx};document.getElementById("relModalTitle").textContent="Edit Relationship";document.getElementById("deleteRelBtn").style.display="inline-flex";setVal("nr-a",r.a);setVal("nr-b",r.b);setVal("nr-desc",r.desc);openModal("relModal");}
+
+function openNewWorld(){editCtx={mode:"new"};document.getElementById("worldModalTitle").textContent="New World Detail";document.getElementById("deleteWorldBtn").style.display="none";clr(["nw-label","nw-val"]);openModal("worldModal");}
+
+function openEditWorld(idx){var w=getFic().world[idx];editCtx={mode:"edit",idx:idx};document.getElementById("worldModalTitle").textContent="Edit World Detail";document.getElementById("deleteWorldBtn").style.display="inline-flex";setVal("nw-label",w.label);setVal("nw-val",w.val);openModal("worldModal");}
+
+function openNewFrag(){editCtx={mode:"new"};document.getElementById("fragMetaTitle").textContent="New Fragment";document.getElementById("deleteFragBtn").style.display="none";document.getElementById("saveFragMetaBtn").style.display="none";clr(["fr-title","fr-pov","fr-note","fr-created","fr-changenote"]);document.getElementById("fr-status").value="draft";document.getElementById("ascendGroup").style.display="none";document.getElementById("changeNoteGroup").style.display="none";document.getElementById("ascendToggleBtn").classList.remove("active");document.getElementById("ascendToggleBtn").textContent="Bestow Chapter Status";openModal("fragMetaModal");}
+
+function openEditFragMeta(idx){var fr=getFic().writing[idx];editCtx={mode:"edit",idx:idx};document.getElementById("fragMetaTitle").textContent="Edit Fragment";document.getElementById("deleteFragBtn").style.display="inline-flex";document.getElementById("saveFragMetaBtn").style.display="inline-flex";setVal("fr-title",fr.title);setVal("fr-pov",fr.pov||"");setVal("fr-note",fr.note||"");setVal("fr-created",fr.createdAt||"");setVal("fr-changenote","");document.getElementById("changeNoteGroup").style.display="block";var st=fr.status||"draft";document.getElementById("fr-status").value=st==="chapter"?"chapter":st;var ag=document.getElementById("ascendGroup");var ab=document.getElementById("ascendToggleBtn");if(st==="polished"||st==="chapter"){ag.style.display="block";}else{ag.style.display="none";}if(st==="chapter"){ab.classList.add("active");ab.textContent="✦ Chapter Bestowed ✦";}else{ab.classList.remove("active");ab.textContent="Bestow Chapter Status";}openModal("fragMetaModal");}
+
+function openWriteScreen(idx){
+  var fr=getFic().writing[idx];
+  writeCtx={ficId:state.activeFicId,idx:idx};
+  var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
+  document.getElementById("writeMeta").innerHTML=
+    '<div class="write-meta-item"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span></div>'+
+    (fr.pov?'<div class="write-meta-item">POV: <span>'+h(fr.pov)+'</span></div>':'')+
+    '<div class="write-meta-item">Created: <span>'+h(fr.createdAt||"")+'</span></div>'+
+    (fr.updatedAt?'<div class="write-meta-item">Edited: <span>'+h(fr.updatedAt)+'</span></div>':'')+
+    (fr.note?'<div class="write-meta-item" style="font-style:italic;color:var(--text-muted)">'+h(fr.note)+'</div>':"");
+  var area=document.getElementById("writeArea");
+  area.innerHTML=fr.content||"";
+  updateWriteWc();
+  document.getElementById("writeScreen").classList.add("open");
+  area.focus();
+}
+
+function updateWriteWc(){
+  var area=document.getElementById("writeArea");
+  var text=area.innerText||area.textContent||"";
+  var wc=text.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
+  document.getElementById("writeWc").textContent=wc+" word"+(wc!==1?"s":"");
+}
+
+function fmt(cmd,val){document.getElementById("writeArea").focus();document.execCommand(cmd,false,val||null);}
+
+function openFragDetail(idx){
+  var fr=getFic().writing[idx];
+  var wc=0;if(fr.content){var td2=document.createElement("div");td2.innerHTML=fr.content;wc=(td2.textContent||td2.innerText||"").trim().split(/\s+/).filter(function(w){return w.length>0;}).length;}
+  var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
+  document.getElementById("fragDetailContent").innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;margin-bottom:0.4rem">'+
+    '<div class="frag-detail-title">'+h(fr.title||"Untitled")+'</div>'+
+    '<div style="display:flex;gap:0.35rem;flex-shrink:0">'+
+    '<button class="btn btn-sm" id="editFragFromDetail">Edit</button>'+
+    '<button class="btn btn-sm" id="traverseBtn">Transverse</button>'+
+    '<button class="btn btn-sm" id="openWriteFromDetail">Write</button>'+
+    '<button class="btn btn-sm" id="closeFragDetail">Close</button></div></div>'+
+    '<div class="frag-detail-meta"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span>'+(fr.pov?' &middot; POV: '+h(fr.pov):'')+' &middot; '+wc+' words &middot; '+h(fr.createdAt||"")+(fr.updatedAt?' &middot; edited '+h(fr.updatedAt):"")+'</div>'+
+    (fr.note?'<div class="frag-detail-note">'+h(fr.note)+'</div>':"")+
+    '<div class="frag-detail-body">'+(fr.content||"<em style='color:var(--text-muted)'>Empty — open Write mode to begin.</em>")+'</div>'+
+    '<div class="frag-wc">'+wc+' words</div>'+
+    (fr.changelog&&fr.changelog.length?
+      '<div class="changelog">'+
+        '<button class="btn btn-sm" style="margin-bottom:0.5rem" onclick="toggleChangelog(this,'+fr.changelog.length+')">View Change Log ('+fr.changelog.length+')</button>'+
+        '<div id="changelogEntries" style="display:none">'+
+          fr.changelog.slice().reverse().map(function(e){
+            var wcLine=e.wcBefore!==undefined?" &middot; "+e.wcBefore+" → "+e.wcAfter+" words":"";
+            return '<div class="changelog-entry">'+
+              '<div class="changelog-time">'+h(e.time)+'<span style="color:var(--text-muted)">'+wcLine+'</span></div>'+
+              '<div class="changelog-detail">'+e.changes.map(function(c){return h(c);}).join(" &middot; ")+'</div>'+
+              (e.note?'<div class="changelog-note">&ldquo;'+h(e.note)+'&rdquo;</div>':"")+
+              '</div>';
+          }).join("")+
+        '</div>'+
+      '</div>':""
+    );
+  openModal("fragDetailModal");
+  document.getElementById("closeFragDetail").addEventListener("click",function(){closeModal("fragDetailModal");});
+  document.getElementById("traverseBtn").addEventListener("click",function(){
+    var raw = fr.content || "";
+    // Replace centered separator paragraphs with clean * * *
+    raw = raw.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, function(match, inner) {
+      if (match.indexOf("text-align:center") !== -1 || match.indexOf("text-align: center") !== -1) {
+        return "\n\n* * *\n\n";
+      }
+      var d = document.createElement("div"); d.innerHTML = inner;
+      return "\n" + (d.textContent || d.innerText || "").trim() + "\n";
+    });
+    // Replace headings
+    raw = raw.replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, function(m, t) {
+      var d = document.createElement("div"); d.innerHTML = t;
+      return "\n\n" + (d.textContent || "").trim().toUpperCase() + "\n\n";
+    });
+    // br to newline, block closing tags to newline
+    raw = raw.replace(/<br\s*\/?>/gi, "\n");
+    raw = raw.replace(/<\/(div|li|blockquote)>/gi, "\n");
+    // strip remaining tags
+    var td = document.createElement("div"); td.innerHTML = raw;
+    var plain = (td.textContent || td.innerText || "")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n /g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    var dateLine = "";
+    if (fr.createdAt) dateLine += "Created: " + fr.createdAt;
+    if (fr.updatedAt) dateLine += " · Edited: " + fr.updatedAt;
+    var noteLine = fr.note ? ("\n\n\"" + fr.note + "\"") : "";
+    var header = "[ " + (fr.title || "Untitled") + " | POV: " + (fr.pov || "—") + " | " + (fr.status || "draft") + " ]" +
+      (dateLine ? "\n" + dateLine : "") +
+      noteLine +
+      "\n\n─────────────────────\n\n";
+    var full = header + plain;
+    var btn = document.getElementById("traverseBtn");
+    function flash() { if(btn){btn.textContent="Traversed ✦";setTimeout(function(){if(btn)btn.textContent="Transverse";},2000);} }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = full; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand("copy"); } catch(e) {}
+      document.body.removeChild(ta); flash();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(flash).catch(fallback);
+    } else { fallback(); }
+  });
+  document.getElementById("editFragFromDetail").addEventListener("click",function(){closeModal("fragDetailModal");openEditFragMeta(idx);});
+  document.getElementById("logBtn").addEventListener("click",function(){openLogPanel(fr);});
+
+  document.getElementById("openWriteFromDetail").addEventListener("click",function(){closeModal("fragDetailModal");openWriteScreen(idx);});
+}
+
+function openNewCe(){editCtx={mode:"new"};document.getElementById("customEntryModalTitle").textContent="Add Entry";document.getElementById("deleteCeBtn").style.display="none";setVal("ce-content","");openModal("customEntryModal");}
+
+function openEditCe(idx){var catId=state.tab.replace("cat:","");var cat=getCatById(getFic(),catId);editCtx={mode:"edit",idx:idx,catId:catId};document.getElementById("customEntryModalTitle").textContent="Edit Entry";document.getElementById("deleteCeBtn").style.display="inline-flex";setVal("ce-content",cat.entries[idx].content);openModal("customEntryModal");}
+
+function makeIcon(){
+  var c=document.createElement("canvas");c.width=192;c.height=192;
+  var ctx=c.getContext("2d");
+  ctx.fillStyle="#0a0a0d";ctx.fillRect(0,0,192,192);
+  ctx.fillStyle="#c9a96e";
+  ctx.font="bold 48px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText("A",96,80);
+  ctx.font="16px monospace";ctx.fillStyle="#4a4760";
+  ctx.fillText("ARCHIVE",96,130);
+  ctx.strokeStyle="#2a2a3a";ctx.lineWidth=6;ctx.strokeRect(3,3,186,186);
+  return c.toDataURL("image/png");
+}
+
+var tlState={open:false,selectedFicId:null,orbs:[],animFrame:null};
+
+function openTimeline(){
+  tlState.open=true;
+  if(tlState.animFrame){cancelAnimationFrame(tlState.animFrame);tlState.animFrame=null;}
+  document.getElementById("timelineScreen").classList.add("open");
+  setTimeout(function(){
+    var canvas=document.getElementById("timelineCanvas");
+    var W=window.innerWidth;
+    var H=Math.round(window.innerHeight*0.46);
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+    canvas.width=W;
+    canvas.height=H;
+    document.getElementById("timelineWrap").style.height=H+"px";
+    document.getElementById("timelineWrap").style.flex="none";
+    console.log("TL canvas:",W,H,"orbs:",state.fics.length);
+    initTimelineOrbs(W,H);
+    runTimelineAnim(canvas,W,H);
+  },120);
+}
+
+function closeTimeline(){
+  document.getElementById("timelineScreen").classList.remove("open");
+  tlState.open=false;
+  if(tlState.animFrame)cancelAnimationFrame(tlState.animFrame);
+}
+
+function saveTimelineData(){
+  var d=tlState.orbs.map(function(o,i){return{id:o.id,note:o.note,order:i};});
+  localStorage.setItem("archive-timeline",JSON.stringify(d));
+}
+
+function initTimelineOrbs(W,H){
+  W=W||window.innerWidth; H=H||300;
+  var saved=null;
+  try{saved=JSON.parse(localStorage.getItem("archive-timeline")||"null");}catch(e){}
+  var maxR=Math.min(W,H)*0.38;
+  var minR=Math.min(W,H)*0.14;
+  var n=state.fics.length||1;
+  if(!state.fics||state.fics.length===0){console.log('No fics loaded');return;}
+  tlState.orbs=state.fics.map(function(f,i){
+    var s=saved?saved.find(function(o){return o.id===f.id;}):null;
+    var spread=(maxR-minR)/(Math.max(n-1,1));
+    var tr=minR+((i%Math.max(n,1))*spread*0.7);
+    return{id:f.id,color:f.color,title:f.title,note:s?s.note||"":"",order:s?s.order:i,angle:(i/n)*Math.PI*2,targetR:tr,x:W/2,y:H/2,r:0,pulse:Math.random()*Math.PI*2};
+  });
+  tlState.orbs.sort(function(a,b){return a.order-b.order;});
+  renderTLPills();
+}
+
+function runTimelineAnim(canvas,W,H){
+  var ctx=canvas.getContext("2d");
+  W=W||canvas.width; H=H||canvas.height;
+  var cx=W/2,cy=H/2;
+  console.log("Running anim cx:",cx,"cy:",cy,"orbs:",tlState.orbs.length);
+  var frame=0,intro=80;
+
+  // star bg for timeline
+  var tlStars=[];
+  for(var i=0;i<180;i++)tlStars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.2+0.2,a:Math.random(),p:Math.random()*Math.PI*2});
+
+  function draw(){
+    if(!tlState.open)return;
+    frame++;
+    var progress=Math.min(frame/intro,1);
+    var ease=1-Math.pow(1-progress,3);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // bg stars
+    tlStars.forEach(function(s){
+      ctx.globalAlpha=s.a*(0.5+0.5*Math.sin(frame*0.02+s.p));
+      ctx.fillStyle="#e8e4d9";
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+
+    // orbit rings
+    tlState.orbs.forEach(function(o){
+      ctx.beginPath();ctx.arc(cx,cy,o.targetR,0,Math.PI*2);
+      ctx.strokeStyle="rgba(201,169,110,0.07)";ctx.lineWidth=1;ctx.stroke();
+    });
+
+    // connection lines
+    for(var i=0;i<tlState.orbs.length;i++){
+      var a2=tlState.orbs[i],b2=tlState.orbs[(i+1)%tlState.orbs.length];
+      ctx.beginPath();ctx.moveTo(a2.x,a2.y);ctx.lineTo(b2.x,b2.y);
+      ctx.strokeStyle="rgba(201,169,110,0.09)";ctx.lineWidth=0.5;ctx.stroke();
+    }
+
+    // orbs
+    tlState.orbs.forEach(function(o,i){
+      o.angle+=0.0006;
+      o.r=14*ease;
+      o.x=cx+Math.cos(o.angle)*o.targetR*ease;
+      o.y=cy+Math.sin(o.angle)*o.targetR*ease;
+      var selected=o.id===tlState.selectedFicId;
+      var pulse=0.88+0.12*Math.sin(frame*0.05+o.pulse);
+      var radius=(selected?18:14)*pulse*(frame<intro?ease:1);
+
+      // glow
+      var g1=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,radius*3);
+      g1.addColorStop(0,o.color+"66");g1.addColorStop(1,o.color+"00");
+      ctx.beginPath();ctx.arc(o.x,o.y,radius*3,0,Math.PI*2);ctx.fillStyle=g1;ctx.fill();
+
+      // core
+      var g2=ctx.createRadialGradient(o.x-radius*0.3,o.y-radius*0.3,0,o.x,o.y,radius);
+      g2.addColorStop(0,"#ffffff55");g2.addColorStop(0.4,o.color+"dd");g2.addColorStop(1,o.color+"55");
+      ctx.beginPath();ctx.arc(o.x,o.y,radius,0,Math.PI*2);ctx.fillStyle=g2;ctx.fill();
+      if(selected){ctx.strokeStyle="#ffffffaa";ctx.lineWidth=1.5;ctx.stroke();}
+
+      // label
+      ctx.globalAlpha=ease;
+      ctx.fillStyle="rgba(232,228,217,0.85)";
+      ctx.font="9px JetBrains Mono";ctx.textAlign="center";
+      var label=o.title.length>16?o.title.substring(0,15)+"…":o.title;
+      ctx.fillText(label,o.x,o.y+radius+13);
+      ctx.globalAlpha=1;
+    });
+
+    // sun
+    var sp=0.92+0.08*Math.sin(frame*0.03);
+    var sr=16*sp*ease;
+    var sg=ctx.createRadialGradient(cx,cy,0,cx,cy,sr*3);
+    sg.addColorStop(0,"rgba(201,169,110,0.7)");sg.addColorStop(1,"rgba(201,169,110,0)");
+    ctx.beginPath();ctx.arc(cx,cy,sr*3,0,Math.PI*2);ctx.fillStyle=sg;ctx.fill();
+    var sg2=ctx.createRadialGradient(cx-3,cy-3,0,cx,cy,sr);
+    sg2.addColorStop(0,"#fffde8");sg2.addColorStop(0.5,"#c9a96e");sg2.addColorStop(1,"#7a5a20");
+    ctx.beginPath();ctx.arc(cx,cy,sr,0,Math.PI*2);ctx.fillStyle=sg2;ctx.fill();
+    ctx.fillStyle="rgba(201,169,110,0.6)";ctx.font="7px JetBrains Mono";ctx.textAlign="center";
+    ctx.fillText("UNIVERSE",cx,cy+sr+11);
+
+    tlState.animFrame=requestAnimationFrame(draw);
+  }
+
+  // tap to select orb
+  function handleTap(cx2,cy2){
+    var rect=canvas.getBoundingClientRect();
+    var px=(cx2-rect.left)*(canvas.width/rect.width);
+    var py=(cy2-rect.top)*(canvas.height/rect.height);
+    var hit=null;
+    tlState.orbs.forEach(function(o){
+      var dx=px-o.x,dy=py-o.y;
+      if(Math.sqrt(dx*dx+dy*dy)<28)hit=o;
+    });
+    if(hit){
+      tlState.selectedFicId=hit.id===tlState.selectedFicId?null:hit.id;
+      document.getElementById("timelineSelectedNote").textContent=tlState.selectedFicId?(hit.note||hit.title):"";
+      document.getElementById("timelineFicRow").querySelectorAll(".tl-fic-pill").forEach(function(p){
+        p.classList.toggle("active",p.getAttribute("data-tlid")===tlState.selectedFicId);
+      });
+      renderTLEditRow();
+    }
+  }
+  canvas.addEventListener("click",function(e){handleTap(e.clientX,e.clientY);});
+  canvas.addEventListener("touchend",function(e){
+    e.preventDefault();
+    if(e.changedTouches&&e.changedTouches[0]){
+      handleTap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+    }
+  },{passive:false});
+
+  draw();
+}
+
+function renderTLPills(){
+  var row=document.getElementById("timelineFicRow");
+  row.innerHTML=tlState.orbs.map(function(o,i){
+    return '<div class="tl-fic-pill" data-tlid="'+o.id+'"><div class="tl-dot" style="background:'+o.color+'"></div>'+o.title+'</div>';
+  }).join("");
+  row.querySelectorAll(".tl-fic-pill").forEach(function(el){
+    el.addEventListener("click",function(){
+      var id=el.getAttribute("data-tlid");
+      tlState.selectedFicId=id===tlState.selectedFicId?null:id;
+      var orb=tlState.orbs.find(function(o){return o.id===id;});
+      document.getElementById("timelineSelectedNote").textContent=tlState.selectedFicId?(orb.note||orb.title):"";
+      row.querySelectorAll(".tl-fic-pill").forEach(function(p){p.classList.remove("active");});
+      if(tlState.selectedFicId)el.classList.add("active");
+      renderTLEditRow();
+    });
+  });
+}
+
+function renderTLEditRow(){
+  var row=document.getElementById("timelineEditRow");
+  if(!tlState.selectedFicId){row.innerHTML="";return;}
+  var orb=tlState.orbs.find(function(o){return o.id===tlState.selectedFicId;});
+  if(!orb){row.innerHTML="";return;}
+  row.innerHTML='<input class="tl-note-input" id="tlNote" placeholder="Timeline note..." value="'+orb.note.replace(/"/g,"&quot;")+'">'+
+    '<button class="btn btn-sm btn-primary" id="tlSave">Save</button>'+
+    '<button class="btn btn-sm" id="tlLeft">◀ Earlier</button>'+
+    '<button class="btn btn-sm" id="tlRight">Later ▶</button>';
+  document.getElementById("tlSave").addEventListener("click",function(){
+    var o=tlState.orbs.find(function(x){return x.id===tlState.selectedFicId;});
+    if(o){o.note=document.getElementById("tlNote").value.trim();document.getElementById("timelineSelectedNote").textContent=o.note||o.title;saveTimelineData();}
+  });
+  document.getElementById("tlLeft").addEventListener("click",function(){
+    var idx=tlState.orbs.findIndex(function(o){return o.id===tlState.selectedFicId;});
+    if(idx>0){var t=tlState.orbs[idx];tlState.orbs[idx]=tlState.orbs[idx-1];tlState.orbs[idx-1]=t;saveTimelineData();renderTLPills();renderTLEditRow();}
+  });
+  document.getElementById("tlRight").addEventListener("click",function(){
+    var idx=tlState.orbs.findIndex(function(o){return o.id===tlState.selectedFicId;});
+    if(idx<tlState.orbs.length-1){var t=tlState.orbs[idx];tlState.orbs[idx]=tlState.orbs[idx+1];tlState.orbs[idx+1]=t;saveTimelineData();renderTLPills();renderTLEditRow();}
+  });
+}
+
+window.addEventListener("load", function() {
+
+
+document.getElementById("submitFicBtn").addEventListener("click",function(){var title=v("nf-title");if(!title)return;if(editCtx.mode==="new"){var nf={id:"fic_"+Date.now(),title:title,genre:v("nf-genre")||"Uncategorized",tagline:v("nf-tagline")||"...",color:document.getElementById("nf-color").value,tags:csv("nf-tags"),tone:csv("nf-tone"),themes:csv("nf-themes"),overview:v("nf-overview"),characters:[],relationships:[],world:[],research:[],writing:[],customCats:[]};state.fics.push(nf);state.activeFicId=nf.id;state.tab="overview";}else{var fic=getFic();fic.title=title;fic.genre=v("nf-genre");fic.tagline=v("nf-tagline");fic.overview=v("nf-overview");fic.themes=csv("nf-themes");fic.tone=csv("nf-tone");fic.tags=csv("nf-tags");fic.color=document.getElementById("nf-color").value;}closeModal("ficModal");saveData();render();});
+document.getElementById("deleteFicBtn").addEventListener("click",function(){if(!confirm("Delete this fic? Cannot be undone."))return;state.fics=state.fics.filter(function(f){return f.id!==state.activeFicId;});if(state.fics.length)state.activeFicId=state.fics[0].id;state.tab="overview";closeModal("ficModal");saveData();render();});
+
+// ── CHAR CRUD ─────────────────────────────────────────────────────────────────
+document.getElementById("submitCharBtn").addEventListener("click",function(){var name=v("nc-name");if(!name)return;var obj={name:name,role:v("nc-role")||"Character",traits:csv("nc-traits"),goal:v("nc-goal"),conflict:v("nc-conflict"),powers:v("nc-powers"),notes:v("nc-notes")};if(editCtx.mode==="new")getFic().characters.push(obj);else getFic().characters[editCtx.idx]=obj;closeModal("charModal");saveData();renderMain();});
+document.getElementById("deleteCharBtn").addEventListener("click",function(){getFic().characters.splice(editCtx.idx,1);closeModal("charModal");saveData();renderMain();});
+
+// ── REL CRUD ──────────────────────────────────────────────────────────────────
+document.getElementById("submitRelBtn").addEventListener("click",function(){var a=v("nr-a"),b=v("nr-b");if(!a||!b)return;var obj={a:a,b:b,desc:v("nr-desc")};if(editCtx.mode==="new")getFic().relationships.push(obj);else getFic().relationships[editCtx.idx]=obj;closeModal("relModal");saveData();renderMain();});
+document.getElementById("deleteRelBtn").addEventListener("click",function(){getFic().relationships.splice(editCtx.idx,1);closeModal("relModal");saveData();renderMain();});
+
+// ── WORLD CRUD ────────────────────────────────────────────────────────────────
+document.getElementById("submitWorldBtn").addEventListener("click",function(){var label=v("nw-label");if(!label)return;var obj={label:label,val:v("nw-val")};if(editCtx.mode==="new")getFic().world.push(obj);else getFic().world[editCtx.idx]=obj;closeModal("worldModal");saveData();renderMain();});
+document.getElementById("deleteWorldBtn").addEventListener("click",function(){getFic().world.splice(editCtx.idx,1);closeModal("worldModal");saveData();renderMain();});
+
+// ── WRITING / FRAGMENTS ───────────────────────────────────────────────────────
+
+// Show ascend box only when polished
+document.getElementById("fr-status").addEventListener("change", function(){
+  var ag = document.getElementById("ascendGroup");
+  if(this.value === "polished") {
+    ag.style.display = "block";
+  } else if(this.value !== "chapter") {
+    ag.style.display = "none";
+    // remove chapter if they change away
+    if(document.getElementById("ascendToggleBtn").classList.contains("active")){
+      document.getElementById("ascendToggleBtn").classList.remove("active");
+      document.getElementById("ascendToggleBtn").textContent = "Bestow Chapter Status";
+    }
+  }
+});
+
+document.getElementById("ascendToggleBtn").addEventListener("click", function(){
+  var btn = this;
+  var sel = document.getElementById("fr-status");
+  if(btn.classList.contains("active")){
+    btn.classList.remove("active");
+    btn.textContent = "Bestow Chapter Status";
+    sel.value = "polished";
+  } else {
+    btn.classList.add("active");
+    btn.textContent = "✦ Chapter Bestowed ✦";
+    sel.value = "chapter";
+  }
+});
+
+document.getElementById("nextFragBtn").addEventListener("click",function(){
+  var title=v("fr-title")||"Untitled Fragment";
+  var now=nowStr();
+  var fst=document.getElementById("fr-status").value;
+  if(document.getElementById("ascendToggleBtn").classList.contains("active"))fst="chapter";
+  if(editCtx.mode==="new"){
+    if(!getFic().writing)getFic().writing=[];
+    var createdDate=v("fr-created")||nowStr();
+    var newFrag={title:title,status:fst,pov:v("fr-pov"),note:v("fr-note"),content:"",createdAt:createdDate,updatedAt:null,changelog:[]};
+    getFic().writing.push(newFrag);
+    editCtx.idx=getFic().writing.length-1;
+    saveData();
+  } else {
+    var fr=getFic().writing[editCtx.idx];
+    if(!fr.changelog) fr.changelog=[];
+    var changes2=[];
+    if(fr.title!==title) changes2.push("Title: \""+fr.title+"\" → \""+title+"\"");
+    if(fr.status!==fst) changes2.push("Status: "+fr.status+" → "+fst);
+    var entry2={time:now,changes:changes2.length?changes2:["Opened in Write mode"]};
+    var cn2=v("fr-changenote"); if(cn2) entry2.note=cn2;
+    fr.changelog.push(entry2);
+    fr.title=title; fr.status=fst; fr.pov=v("fr-pov"); fr.note=v("fr-note");
+    if(v("fr-created")) fr.createdAt=v("fr-created");
+    fr.updatedAt=nowStr();
+    saveData();
+  }
+  closeModal("fragMetaModal");
+  openWriteScreen(editCtx.idx);
+});
+
+document.getElementById("deleteFragBtn").addEventListener("click",function(){if(!confirm("Delete this fragment?"))return;getFic().writing.splice(editCtx.idx,1);closeModal("fragMetaModal");saveData();renderMain();});
+
+
+
+document.getElementById("writeArea").addEventListener("input",function(){
+  updateWriteWc();
+  // Auto-save every keystroke with debounce
+  clearTimeout(writeCtx.saveTimer);
+  writeCtx.saveTimer=setTimeout(function(){
+    var fic=null;
+    for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
+    if(fic&&fic.writing[writeCtx.idx]){
+      var fr2=fic.writing[writeCtx.idx];
+      var newContent=document.getElementById("writeArea").innerHTML;
+      var countW=function(s){return s.replace(/<[^>]*>/g," ").trim().split(/\s+/).filter(function(w){return w.length>0;}).length;};
+      var oldWc=fr2.content?countW(fr2.content):0;
+      var newWc=countW(newContent);
+      if(Math.abs(newWc-oldWc)>=1){
+        if(!fr2.sessions) fr2.sessions=[];
+        var now=Date.now();
+        var GAP=30*60*1000;
+        var lastS=fr2.sessions[fr2.sessions.length-1];
+        if(!lastS||now-lastS.lastTick>GAP){
+          fr2.sessions.push({id:"s_"+now,startTime:nowStr(),startTs:now,lastTick:now,endTime:nowStr(),wcStart:oldWc,wcEnd:newWc,note:""});
+        } else {
+          lastS.lastTick=now;
+          lastS.endTime=nowStr();
+          lastS.wcEnd=newWc;
+        }
+      }
+      fr2.content=newContent;
+      fr2.updatedAt=nowStr();
+      saveData();
+    }
+  },800);
+});
+
+document.getElementById("writeSaveBtn").addEventListener("click",function(){
+  var fic=null;
+  for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
+  if(fic&&fic.writing[writeCtx.idx]){
+    fic.writing[writeCtx.idx].content=document.getElementById("writeArea").innerHTML;
+    fic.writing[writeCtx.idx].updatedAt=nowStr();
+    saveData();
+  }
+  document.getElementById("writeScreen").classList.remove("open");
+  state.activeFicId=writeCtx.ficId; state.tab="writing"; render();
+});
+
+// Formatting buttons
+document.getElementById("fmtUndo").addEventListener("click",function(){document.getElementById("writeArea").focus();document.execCommand("undo",false,null);});
+document.getElementById("fmtRedo").addEventListener("click",function(){document.getElementById("writeArea").focus();document.execCommand("redo",false,null);});
+document.getElementById("fmtBold").addEventListener("click",function(){fmt("bold");});
+document.getElementById("fmtItalic").addEventListener("click",function(){fmt("italic");});
+document.getElementById("fmtUnderline").addEventListener("click",function(){fmt("underline");});
+document.getElementById("fmtLeft").addEventListener("click",function(){fmt("justifyLeft");});
+document.getElementById("fmtCenter").addEventListener("click",function(){fmt("justifyCenter");});
+document.getElementById("fmtRight").addEventListener("click",function(){fmt("justifyRight");});
+document.getElementById("fmtH1").addEventListener("click",function(){fmt("formatBlock","h2");});
+document.getElementById("fmtSep").addEventListener("click",function(){
+  document.getElementById("writeArea").focus();
+  document.execCommand("insertHTML",false,'<p style="text-align:center;color:var(--text-muted);letter-spacing:0.3em;margin:1rem 0;">&#x1040EF;</p>');
+});
+
+
+// ── RESEARCH ──────────────────────────────────────────────────────────────────
+document.getElementById("submitResearchBtn").addEventListener("click",function(){var label=v("rs-label");if(!label)return;if(!getFic().research)getFic().research=[];getFic().research.push({label:label,img:v("rs-img"),url:v("rs-url"),note:v("rs-note")});closeModal("researchModal");clr(["rs-label","rs-img","rs-url","rs-note"]);saveData();renderMain();});
+
+// ── CUSTOM CATS ───────────────────────────────────────────────────────────────
+document.getElementById("newCatBtn").addEventListener("click",function(){var sel=document.getElementById("cat-fic");sel.innerHTML=state.fics.map(function(f){return '<option value="'+h(f.id)+'">'+h(f.title)+'</option>';}).join("");sel.value=state.activeFicId;setVal("cat-name","");openModal("catModal");});
+document.getElementById("submitCatBtn").addEventListener("click",function(){var name=v("cat-name");if(!name)return;var ficId=document.getElementById("cat-fic").value;var fic=null;for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===ficId){fic=state.fics[i];break;}}if(!fic)return;if(!fic.customCats)fic.customCats=[];var cat={id:"cat_"+Date.now(),name:name,entries:[]};fic.customCats.push(cat);state.activeFicId=ficId;state.tab="cat:"+cat.id;closeModal("catModal");saveData();render();});
+document.getElementById("submitCeBtn").addEventListener("click",function(){var content=v("ce-content");if(!content)return;var catId=state.tab.replace("cat:","");var cat=getCatById(getFic(),catId);if(!cat.entries)cat.entries=[];if(editCtx.mode==="new")cat.entries.push({content:content});else cat.entries[editCtx.idx]={content:content};closeModal("customEntryModal");saveData();renderMain();});
+document.getElementById("deleteCeBtn").addEventListener("click",function(){var cat=getCatById(getFic(),editCtx.catId);cat.entries.splice(editCtx.idx,1);closeModal("customEntryModal");saveData();renderMain();});
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+document.getElementById("exportBtn").addEventListener("click",function(){
+  var dataStr=JSON.stringify({fics:state.fics,activeFicId:state.activeFicId},null,2);
+  var blob=new Blob([dataStr],{type:"application/json"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;a.download="the-archive-backup.json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+});
+document.getElementById("importFile").addEventListener("change",function(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var parsed=JSON.parse(ev.target.result);
+      if(!parsed.fics||!Array.isArray(parsed.fics)){alert("Invalid archive file.");return;}
+      parsed.fics.forEach(function(f){if(!f.research)f.research=[];if(!f.writing)f.writing=[];if(!f.customCats)f.customCats=[];});
+      state.fics=parsed.fics;state.activeFicId=parsed.activeFicId||parsed.fics[0].id;state.tab="overview";
+      saveData();render();alert("Archive imported!");
+    }catch(err){alert("Could not read file.");}
+  };
+  reader.readAsText(file);e.target.value="";
+});
+
+// ── PWA ───────────────────────────────────────────────────────────────────────
+window.addEventListener("beforeinstallprompt",function(e){
+  e.preventDefault();deferredInstallPrompt=e;
+  document.getElementById("installBanner").classList.remove("hidden");
+});
+document.getElementById("installBtn").addEventListener("click",function(){
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(function(){deferredInstallPrompt=null;document.getElementById("installBanner").classList.add("hidden");});
+});
+document.getElementById("dismissBanner").addEventListener("click",function(){document.getElementById("installBanner").classList.add("hidden");});
+
+// Generate icon via canvas
+
+// Build and inject manifest
+var iconData=makeIcon();
+var manifestData={
+  name:"The Archive",
+  short_name:"Archive",
+  description:"Starrcourt's Story Bible",
+  start_url:"./",
+  scope:"./",
+  display:"standalone",
+  orientation:"portrait",
+  background_color:"#0a0a0d",
+  theme_color:"#0a0a0d",
+  icons:[
+    {src:iconData,sizes:"192x192",type:"image/png"},
+    {src:iconData,sizes:"512x512",type:"image/png"}
+  ]
+};
+var mBlob=new Blob([JSON.stringify(manifestData)],{type:"application/manifest+json"});
+var mUrl=URL.createObjectURL(mBlob);
+document.getElementById("manifestLink").setAttribute("href",mUrl);
+
+// Service worker removed for compatibility
+
+// ── OVERLAY CLOSE ─────────────────────────────────────────────────────────────
+document.querySelectorAll(".overlay").forEach(function(el){el.addEventListener("click",function(e){if(e.target===el)el.classList.remove("open");});});
+
+// ── CANCEL BUTTONS ────────────────────────────────────────────────────────────
+document.getElementById("cancelFicBtn").addEventListener("click",function(){closeModal("ficModal");});
+document.getElementById("cancelCharBtn").addEventListener("click",function(){closeModal("charModal");});
+document.getElementById("cancelRelBtn").addEventListener("click",function(){closeModal("relModal");});
+document.getElementById("cancelWorldBtn").addEventListener("click",function(){closeModal("worldModal");});
+document.getElementById("cancelResearchBtn").addEventListener("click",function(){closeModal("researchModal");});
+document.getElementById("cancelCatBtn").addEventListener("click",function(){closeModal("catModal");});
+document.getElementById("cancelCeBtn").addEventListener("click",function(){closeModal("customEntryModal");});
+document.getElementById("cancelFragMetaBtn").addEventListener("click",function(){closeModal("fragMetaModal");});
+
+document.getElementById("saveFragMetaBtn").addEventListener("click",function(){
+  var title=v("fr-title")||"Untitled Fragment";
+  var now=nowStr();
+  var fst=document.getElementById("fr-status").value;
+  if(document.getElementById("ascendToggleBtn").classList.contains("active"))fst="chapter";
+  var fr=getFic().writing[editCtx.idx];
+  // Build changelog entry
+  if(!fr.changelog) fr.changelog=[];
+  var changes=[];
+  if(fr.title!==title) changes.push("Title: \""+fr.title+"\" → \""+title+"\"");
+  if(fr.status!==fst) changes.push("Status: "+fr.status+" → "+fst);
+  if(fr.pov!==(v("fr-pov")||"")) changes.push("POV: "+(fr.pov||"none")+" → "+(v("fr-pov")||"none"));
+  var entry={time:now,changes:changes.length?changes:["Metadata updated"]};
+  var cn=v("fr-changenote"); if(cn) entry.note=cn;
+  fr.changelog.push(entry);
+  // Save fields
+  fr.title=title; fr.status=fst; fr.pov=v("fr-pov"); fr.note=v("fr-note");
+  if(v("fr-created")) fr.createdAt=v("fr-created");
+  fr.updatedAt=nowStr();
+  closeModal("fragMetaModal"); saveData(); renderMain();
+});
+document.getElementById("newFicBtn").addEventListener("click",openNewFic);
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// TIMELINE
+
+
+
+
+
+
+
+
+document.getElementById("timelineBtn").addEventListener("click",openTimeline);
+document.getElementById("timelineClose").addEventListener("click",closeTimeline);
+
+try {
+  loadData();
+  render();
+} catch(err) {
+  console.error("INIT ERROR:", err.message, err.stack);
+  document.getElementById("main").innerHTML = '<div style="padding:2rem;color:#c96e6e;font-family:monospace;font-size:0.8rem">Init error: ' + err.message + '</div>';
+}
+
+});</script>
+
+<!-- TIMELINE SCREEN -->
+<div class="timeline-screen" id="timelineScreen">
+  <div class="timeline-close" id="timelineClose">&#x2715; Close</div>
+  <div class="timeline-title">
+    <div class="tl-eyebrow">&#10022; Starrcourt Universe &#10022;</div>
+    <div class="tl-heading">The Cosmic Timeline</div>
+    <div class="tl-sub">Tap an orb to select &#183; use arrows to reorder &#183; add timeline notes</div>
+  </div>
+  <div class="timeline-canvas-wrap" id="timelineWrap">
+    <canvas id="timelineCanvas"></canvas>
+  </div>
+  <div class="timeline-fic-row" id="timelineFicRow"></div>
+  <div id="timelineSelectedNote" class="tl-selected-note"></div>
+  <div class="timeline-edit-row" id="timelineEditRow"></div>
+</div>
+
+<style>
+.timeline-screen{display:none;position:fixed;inset:0;background:#050508;z-index:600;flex-direction:column;align-items:center;overflow:hidden;width:100%;height:100%;}
+.timeline-screen.open{display:flex;}
+.timeline-close{position:fixed;top:1rem;right:1rem;font-family:"JetBrains Mono",monospace;font-size:0.65rem;letter-spacing:0.1em;color:var(--text-muted);cursor:pointer;z-index:700;padding:0.5rem 0.85rem;border:1px solid var(--border);transition:all 0.2s;background:var(--bg2);touch-action:manipulation;}
+.timeline-close:hover{color:var(--accent);}
+.timeline-title{text-align:center;padding:1.5rem 1rem 0.25rem;z-index:620;position:relative;}
+.tl-eyebrow{font-family:"JetBrains Mono",monospace;font-size:0.58rem;letter-spacing:0.2em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.35rem;}
+.tl-heading{font-family:"Cinzel",serif;font-size:1.4rem;color:var(--accent);letter-spacing:0.1em;margin-bottom:0.2rem;}
+.tl-sub{font-family:"JetBrains Mono",monospace;font-size:0.55rem;color:var(--text-muted);letter-spacing:0.06em;}
+.timeline-canvas-wrap{flex:1;width:100%;position:relative;z-index:2;min-height:240px;display:block;}
+#timelineCanvas{width:100%;height:100%;display:block;position:relative;z-index:1;}
+.timeline-fic-row{display:flex;flex-wrap:wrap;justify-content:center;gap:0.4rem;padding:0.5rem 0.75rem;z-index:620;position:relative;max-width:700px;}
+.tl-fic-pill{font-family:"JetBrains Mono",monospace;font-size:0.55rem;letter-spacing:0.06em;padding:0.22rem 0.55rem;border:1px solid var(--border-light);color:var(--text-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;display:flex;align-items:center;gap:0.35rem;}
+.tl-fic-pill:hover,.tl-fic-pill.active{border-color:var(--accent);color:var(--accent);}
+.tl-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.tl-selected-note{font-family:"Cormorant Garamond",serif;font-size:0.92rem;font-style:italic;color:var(--text-dim);text-align:center;padding:0 1rem 0.35rem;min-height:1.4rem;z-index:620;position:relative;}
+.timeline-edit-row{display:flex;gap:0.4rem;padding:0 1rem 0.75rem;z-index:620;position:relative;flex-wrap:wrap;justify-content:center;}
+.tl-note-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:"Cormorant Garamond",serif;font-size:0.9rem;padding:0.38rem 0.6rem;outline:none;width:200px;font-style:italic;}
+.tl-note-input:focus{border-color:var(--accent);}
+</style>
+
+<canvas id="starCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.72;"></canvas>
+<style>
+  #starCanvas{z-index:0;position:fixed;}
+  header{z-index:100;}
+  #installBanner{position:relative;z-index:99;}
+  .fic-list{position:relative;z-index:98;}
+  .main{position:relative;z-index:1;}
+  .write-screen{z-index:300;}
+  .overlay{z-index:200;}
+  .frag-detail-modal,
+  .char-detail-modal,
+  .modal,
+  .frag-meta-modal{position:relative;z-index:201;}
+</style>
+<script>
+(function(){
+  var canvas = document.getElementById("starCanvas");
+  var ctx = canvas.getContext("2d");
+  var stars = [];
+  var scrollY = 0;
+  var W, H;
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function randomBetween(a,b){ return a + Math.random()*(b-a); }
+
+  function initStars(){
+    stars = [];
+    var count = Math.floor((W * H) / 3500);
+    for(var i=0; i<count; i++){
+      stars.push({
+        x: randomBetween(0, W),
+        y: randomBetween(0, H * 3),
+        r: randomBetween(0.3, 1.8),
+        alpha: randomBetween(0.4, 1.0),
+        twinkleSpeed: randomBetween(0.003, 0.012),
+        twinkleOffset: randomBetween(0, Math.PI * 2),
+        parallax: randomBetween(0.05, 0.25)
+      });
+    }
+  }
+
+  var frame = 0;
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    frame += 0.016;
+    for(var i=0; i<stars.length; i++){
+      var s = stars[i];
+      var py = s.y - scrollY * s.parallax;
+      // wrap vertically
+      py = ((py % (H * 1.2)) + (H * 1.2)) % (H * 1.2) - H * 0.1;
+      var twinkle = 0.5 + 0.5 * Math.sin(frame * s.twinkleSpeed * 60 + s.twinkleOffset);
+      var alpha = s.alpha * (0.5 + 0.5 * twinkle);
+      // occasionally draw as a small cross/sparkle
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      if(s.r > 0.9){
+        // sparkle
+        ctx.strokeStyle = "#c9a96e";
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(s.x - s.r*2.5, py);
+        ctx.lineTo(s.x + s.r*2.5, py);
+        ctx.moveTo(s.x, py - s.r*2.5);
+        ctx.lineTo(s.x, py + s.r*2.5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = s.r > 0.8 ? "#e8e4d9" : "#c9a96e";
+      ctx.beginPath();
+      ctx.arc(s.x, py, s.r, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener("scroll", function(){
+    scrollY = window.scrollY || document.documentElement.scrollTop;
+  }, {passive:true});
+
+  // also track scroll inside .main and other scrollable divs
+  document.addEventListener("scroll", function(e){
+    if(e.target && e.target.scrollTop !== undefined){
+      scrollY = e.target.scrollTop;
+    }
+  }, true);
+
+  window.addEventListener("resize", function(){ resize(); initStars(); });
+  resize();
+  initStars();
+  draw();
+})();
+</script>
+</body>
+</html>
