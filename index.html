@@ -609,9 +609,20 @@ function openLogPanel(fr) {
           daySessions.map(function(s){
             var dur = "";
             if(s.startTime && s.endTime && s.startTime !== s.endTime){
+              var sd = s.startTime.split(" at ")[0]||"";
+              var ed = s.endTime.split(" at ")[0]||"";
               var st = s.startTime.split(" at ")[1]||s.startTime;
               var et = s.endTime.split(" at ")[1]||s.endTime;
-              dur = st + " – " + et;
+              var isForward = (s.startTs||0) <= (s.lastTick||s.startTs||1);
+              var first = isForward ? st : et;
+              var last = isForward ? et : st;
+              var firstD = isForward ? sd : ed;
+              var lastD = isForward ? ed : sd;
+              if(firstD && lastD && firstD !== lastD){
+                dur = firstD + " " + first + " → " + lastD + " " + last;
+              } else {
+                dur = first + " – " + last;
+              }
             } else {
               dur = (s.startTime||"").split(" at ")[1]||s.startTime||"";
             }
