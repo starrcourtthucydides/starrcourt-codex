@@ -442,6 +442,62 @@ var editCtx = {};
 var writeCtx = {};
 var deferredInstallPrompt = null;
 
+function migrateOldChangelog(fr) {
+  // Skip if already migrated or no old changelog
+  if (!fr.changelog || !fr.changelog.length) return;
+  if (fr._migrated) return;
+  if (!fr.sessions) fr.sessions = [];
+
+  // Group old changelog entries by date
+  var groups = {};
+  var order = [];
+  fr.changelog.forEach(function(e) {
+    if (!e.time) return;
+    var datePart = e.time.split(" at ")[0];
+    if (!groups[datePart]) { groups[datePart] = []; order.push(datePart); }
+    groups[datePart].push(e);
+  });
+
+  // Convert each date group into a session
+  order.forEach(function(date) {
+    var entries = groups[date];
+    // Find word count range
+    var wcEntries = entries.filter(function(e){ return e.wcBefore !== undefined; });
+    var wcStart = wcEntries.length ? wcEntries[0].wcBefore : 0;
+    var wcEnd = wcEntries.length ? wcEntries[wcEntries.length-1].wcAfter : 0;
+    // Find time range
+    var times = entries.map(function(e){ return e.time; }).filter(Boolean);
+    var startTime = times[times.length-1] || (date + " at 12:00 AM");
+    var endTime = times[0] || startTime;
+    // Check if a session for this date already exists
+    var exists = fr.sessions.some(function(s){
+      return s.startTime && s.startTime.split(" at ")[0] === date;
+    });
+    if (!exists) {
+      fr.sessions.push({
+        id: "migrated_" + date.replace(/\s/g,"_"),
+        startTime: startTime,
+        startTs: 0,
+        lastTick: 0,
+        endTime: endTime,
+        wcStart: wcStart,
+        wcEnd: wcEnd,
+        note: "",
+        migrated: true
+      });
+    }
+  });
+
+  // Sort sessions by startTs (migrated ones go by date string)
+  fr.sessions.sort(function(a, b) {
+    var ta = a.startTs || 0;
+    var tb = b.startTs || 0;
+    return ta - tb;
+  });
+
+  fr._migrated = true;
+}
+
 function loadData() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
@@ -451,6 +507,12 @@ function loadData() {
         if (!f.research) f.research = [];
         if (!f.writing) f.writing = [];
         if (!f.customCats) f.customCats = [];
+        // Migrate old changelog entries to sessions
+        if (f.writing) {
+          f.writing.forEach(function(fr) {
+            migrateOldChangelog(fr);
+          });
+        }
       });
       state.fics = saved.fics;
       state.activeFicId = saved.activeFicId || saved.fics[0].id;
@@ -458,6 +520,8 @@ function loadData() {
       state.fics = JSON.parse(JSON.stringify(DEFAULT_FICS));
     }
   } catch(e) { state.fics = JSON.parse(JSON.stringify(DEFAULT_FICS)); }
+  // Save migrated data
+  saveData();
 }
 
 function saveData() {
@@ -849,22 +913,7 @@ function openFragDetail(idx){
     '<div class="frag-detail-meta"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span>'+(fr.pov?' &middot; POV: '+h(fr.pov):'')+' &middot; '+wc+' words &middot; '+h(fr.createdAt||"")+(fr.updatedAt?' &middot; edited '+h(fr.updatedAt):"")+'</div>'+
     (fr.note?'<div class="frag-detail-note">'+h(fr.note)+'</div>':"")+
     '<div class="frag-detail-body">'+(fr.content||"<em style='color:var(--text-muted)'>Empty — open Write mode to begin.</em>")+'</div>'+
-    '<div class="frag-wc">'+wc+' words</div>'+
-    (fr.changelog&&fr.changelog.length?
-      '<div class="changelog">'+
-        '<button class="btn btn-sm" style="margin-bottom:0.5rem" onclick="toggleChangelog(this,'+fr.changelog.length+')">View Change Log ('+fr.changelog.length+')</button>'+
-        '<div id="changelogEntries" style="display:none">'+
-          fr.changelog.slice().reverse().map(function(e){
-            var wcLine=e.wcBefore!==undefined?" &middot; "+e.wcBefore+" → "+e.wcAfter+" words":"";
-            return '<div class="changelog-entry">'+
-              '<div class="changelog-time">'+h(e.time)+'<span style="color:var(--text-muted)">'+wcLine+'</span></div>'+
-              '<div class="changelog-detail">'+e.changes.map(function(c){return h(c);}).join(" &middot; ")+'</div>'+
-              (e.note?'<div class="changelog-note">&ldquo;'+h(e.note)+'&rdquo;</div>':"")+
-              '</div>';
-          }).join("")+
-        '</div>'+
-      '</div>':""
-    );
+    '<div class="frag-wc">'+wc+' words</div>';
   openModal("fragDetailModal");
   document.getElementById("closeFragDetail").addEventListener("click",function(){closeModal("fragDetailModal");});
   document.getElementById("traverseBtn").addEventListener("click",function(){
