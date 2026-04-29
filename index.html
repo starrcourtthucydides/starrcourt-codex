@@ -518,7 +518,7 @@ function migrateOldChangelog(fr) {
   });
 
   fr._migrated = true;
-  fr._migrateVersion = 2;
+  fr._migrateVersion = 3;
 }
 
 function loadData() {
@@ -534,7 +534,7 @@ function loadData() {
         if (f.writing) {
           f.writing.forEach(function(fr) {
             // Reset migration flag so fixed migration runs again
-            if(fr._migrated && fr._migrateVersion !== 2) {
+            if(fr._migrated && fr._migrateVersion !== 3) {
               fr._migrated = false;
             }
             migrateOldChangelog(fr);
