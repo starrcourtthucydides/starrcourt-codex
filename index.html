@@ -159,6 +159,13 @@ select.field-input option{background:var(--bg2);}
 .diff-added{background:rgba(201,169,110,0.18);color:var(--accent);border-radius:2px;padding:0 1px;}
 .diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 1px;}
 .diff-view{font-family:"Cormorant Garamond",serif;font-size:0.92rem;line-height:1.9;color:var(--text-dim);padding:0.75rem 0;border-top:1px solid var(--border);margin-top:0.5rem;word-break:break-word;}
+.snap-entry{border-bottom:1px solid var(--border);cursor:pointer;}
+.snap-entry:last-child{border-bottom:none;}
+.snap-entry:hover{background:rgba(201,169,110,0.04);}
+.snap-entry-header{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;}
+.snap-time{font-family:"JetBrains Mono",monospace;font-size:0.58rem;color:var(--accent);}
+.snap-arrow{font-size:0.5rem;color:var(--text-muted);transition:transform 0.2s;}
+.snap-diff{padding:0 0 0.5rem;}
 .diff-loading{font-family:"JetBrains Mono",monospace;font-size:0.6rem;color:var(--text-muted);padding:0.5rem 0;font-style:italic;}
 
 .log-panel{position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--bg2);border-left:1px solid var(--border-light);z-index:550;display:flex;flex-direction:column;transition:right 0.3s ease;overflow:hidden;}
@@ -881,6 +888,38 @@ function toggleSessionDiff(row, sId, sessionJson) {
   }, 50);
 }
 
+function toggleSnapDiff(row, snapId, dataJson) {
+  var diffDiv = document.getElementById("sdiff_" + snapId);
+  var arrow = row.querySelector(".snap-arrow");
+  if(!diffDiv) return;
+  if(diffDiv.style.display !== "none"){
+    diffDiv.style.display = "none";
+    if(arrow) arrow.style.transform = "";
+    return;
+  }
+  diffDiv.style.display = "block";
+  if(arrow) arrow.style.transform = "rotate(90deg)";
+  if(diffDiv.dataset.loaded) return;
+  var data = {};
+  try { data = JSON.parse(dataJson); } catch(e) {}
+  diffDiv.innerHTML = "<div class=\"diff-loading\">Computing...</div>";
+  setTimeout(function(){
+    try {
+      var diff = computeDiff(data.prevText||"", data.snapText||"");
+      var added = diff.filter(function(t){return t.type==="add"&&t.val.trim();}).length;
+      var deleted = diff.filter(function(t){return t.type==="del"&&t.val.trim();}).length;
+      var summary = "<div style=\"display:flex;gap:0.75rem;margin-bottom:0.4rem;font-family:JetBrains Mono,monospace;font-size:0.55rem\">"
+        +(added?"<span style=\"color:var(--accent)\">+"+added+" words</span>":"")
+        +(deleted?"<span style=\"color:#c4563a\">-"+deleted+" words</span>":"")
+        +"</div>";
+      diffDiv.innerHTML = summary + "<div class=\"diff-view\">" + renderDiff(diff) + "</div>";
+      diffDiv.dataset.loaded = "1";
+    } catch(e){
+      diffDiv.innerHTML = "<div class=\"diff-loading\">Could not compute.</div>";
+    }
+  }, 30);
+}
+
 function closeLogPanel() {
   document.getElementById("logPanel").classList.remove("open");
   document.getElementById("logOverlay").classList.remove("open");
@@ -1105,6 +1144,8 @@ function openNewFrag(){editCtx={mode:"new"};document.getElementById("fragMetaTit
 function openEditFragMeta(idx){var fr=getFic().writing[idx];editCtx={mode:"edit",idx:idx};document.getElementById("fragMetaTitle").textContent="Edit Fragment";document.getElementById("deleteFragBtn").style.display="inline-flex";document.getElementById("saveFragMetaBtn").style.display="inline-flex";setVal("fr-title",fr.title);setVal("fr-pov",fr.pov||"");setVal("fr-note",fr.note||"");setVal("fr-created",fr.createdAt||"");setVal("fr-changenote","");document.getElementById("changeNoteGroup").style.display="block";var st=fr.status||"draft";document.getElementById("fr-status").value=st==="chapter"?"chapter":st;var ag=document.getElementById("ascendGroup");var ab=document.getElementById("ascendToggleBtn");if(st==="polished"||st==="chapter"){ag.style.display="block";}else{ag.style.display="none";}if(st==="chapter"){ab.classList.add("active");ab.textContent="✦ Chapter Bestowed ✦";}else{ab.classList.remove("active");ab.textContent="Bestow Chapter Status";}openModal("fragMetaModal");}
 
 function openWriteScreen(idx){
+  // Clear any existing snapshot timer
+  if(writeCtx.snapTimer) clearInterval(writeCtx.snapTimer);
   var fr=getFic().writing[idx];
   writeCtx={ficId:state.activeFicId,idx:idx};
   var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
@@ -1542,12 +1583,13 @@ document.getElementById("writeArea").addEventListener("input",function(){
 });
 
 document.getElementById("writeSaveBtn").addEventListener("click",function(){
+  if(writeCtx.snapTimer){clearInterval(writeCtx.snapTimer);writeCtx.snapTimer=null;}
   var fic=null;
   for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
   if(fic&&fic.writing[writeCtx.idx]){
     fic.writing[writeCtx.idx].content=document.getElementById("writeArea").innerHTML;
     fic.writing[writeCtx.idx].updatedAt=nowStr();
-    // Store snapshot for diff history
+    // Take final snapshot on save
     storeDiffSnapshot(fic.writing[writeCtx.idx]);
     saveData();
   }
@@ -1567,6 +1609,21 @@ document.getElementById("fmtRight").addEventListener("click",function(){fmt("jus
 document.getElementById("fmtH1").addEventListener("click",function(){fmt("formatBlock","h2");});
 document.getElementById("fmtSep").addEventListener("click",function(){
   document.getElementById("writeArea").focus();
+  // Take baseline snapshot when write mode opens
+  (function(){
+    var fic=null;
+    for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
+    if(fic&&fic.writing[writeCtx.idx]) storeDiffSnapshot(fic.writing[writeCtx.idx]);
+  })();
+  // Auto-snapshot every 3 minutes while writing
+  writeCtx.snapTimer = setInterval(function(){
+    var fic=null;
+    for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
+    if(fic&&fic.writing[writeCtx.idx]){
+      storeDiffSnapshot(fic.writing[writeCtx.idx]);
+      saveData();
+    }
+  }, 3*60*1000);
   document.execCommand("insertHTML",false,'<p style="text-align:center;color:var(--text-muted);letter-spacing:0.3em;margin:1rem 0;">&#x1040EF;</p>');
 });
 
