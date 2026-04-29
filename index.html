@@ -627,14 +627,22 @@ function groupSessionsByDate(sessions) {
 
 // ── DIFF ENGINE ──────────────────────────────────────────────────────────────
 function stripHtml(s) {
+  // Preserve paragraph/line breaks before stripping tags
+  var withBreaks = (s||"")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<\/li>/gi, "\n");
   var d = document.createElement("div");
-  d.innerHTML = s || "";
-  return (d.textContent || d.innerText || "").trim();
+  d.innerHTML = withBreaks;
+  return (d.textContent || d.innerText || "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function tokenize(text) {
-  // Split into words and whitespace tokens
-  return text.match(/\S+|\s+/g) || [];
+  // Split into words, whitespace, and newlines — newlines are their own tokens
+  return text.match(/\n\n|\n|\S+|[^\S\n]+/g) || [];
 }
 
 function computeDiff(oldText, newText) {
@@ -686,6 +694,11 @@ function renderDiff(diff) {
   var html2 = "";
   for(var i = 0; i < diff.length; i++) {
     var tok = diff[i];
+    // Render newlines as line breaks regardless of type
+    if(tok.val === "\n" || tok.val === "\n\n") {
+      html2 += tok.val === "\n\n" ? "<br><br>" : "<br>";
+      continue;
+    }
     var v = tok.val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     if(tok.type === "equal") html2 += v;
     else if(tok.type === "add") html2 += "<span class=\"diff-added\">" + v + "</span>";
@@ -694,11 +707,16 @@ function renderDiff(diff) {
   return html2;
 }
 
-function storeDiffSnapshot(fr) {
+function storeDiffSnapshot(fr, usesaved) {
   if(!fr.snapshots) fr.snapshots = [];
-  var el = document.getElementById("writeArea");
-  var raw = (el && writeCtx && writeCtx.ficId) ? el.innerHTML : (fr.content||"");
-  var plain = stripHtml(raw);
+  var plain;
+  if(usesaved) {
+    // Baseline snapshot: read from saved content, not the live editor
+    plain = stripHtml(fr.content||"");
+  } else {
+    var el = document.getElementById("writeArea");
+    plain = el ? stripHtml(el.innerHTML) : stripHtml(fr.content||"");
+  }
   var now = Date.now();
   if(fr.snapshots.length > 0) {
     var last = fr.snapshots[fr.snapshots.length-1];
@@ -1191,7 +1209,7 @@ function openWriteScreen(idx){
     var fic=null;
     for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
     if(fic&&fic.writing[writeCtx.idx]){
-      storeDiffSnapshot(fic.writing[writeCtx.idx]);
+      storeDiffSnapshot(fic.writing[writeCtx.idx], true); // baseline from saved content
       saveData();
     }
     // Auto-snapshot every 30 seconds while writing
