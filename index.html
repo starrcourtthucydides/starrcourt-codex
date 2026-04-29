@@ -609,6 +609,18 @@ function groupSessionsByDate(sessions) {
   return { groups: groups, order: order };
 }
 
+function parseDisplayTime(s){
+  try{
+    var mo={"Jan":0,"Feb":1,"Mar":2,"Apr":3,"May":4,"Jun":5,"Jul":6,"Aug":7,"Sep":8,"Oct":9,"Nov":10,"Dec":11};
+    var p=s.split(" at "); var dp=p[0].trim().split(" ");
+    var m=mo[dp[0]]||0,d=parseInt(dp[1])||0,y=parseInt(dp[2])||0;
+    var tp=(p[1]||"").trim().split(" "); var hm=tp[0].split(":");
+    var hr=parseInt(hm[0])||0,mn=parseInt(hm[1])||0;
+    if(tp[1]==="PM"&&hr!==12)hr+=12; if(tp[1]==="AM"&&hr===12)hr=0;
+    return new Date(y,m,d,hr,mn).getTime();
+  }catch(e){return 0;}
+}
+
 function openLogPanel(fr) {
   var body = document.getElementById("logPanelBody");
   var allSessions = fr.sessions && fr.sessions.length ? fr.sessions : [];
@@ -640,11 +652,12 @@ function openLogPanel(fr) {
               var ed = s.endTime.split(" at ")[0]||"";
               var st = s.startTime.split(" at ")[1]||s.startTime;
               var et = s.endTime.split(" at ")[1]||s.endTime;
-              var isForward = s.migrated ? (s.wcStart <= s.wcEnd) : ((s.startTs||0) <= (s.lastTick||s.startTs||1));
-              var first = isForward ? st : et;
-              var last = isForward ? et : st;
-              var firstD = isForward ? sd : ed;
-              var lastD = isForward ? ed : sd;
+              // Always sort by parsing actual time values
+              var t1 = parseDisplayTime(s.startTime);
+              var t2 = parseDisplayTime(s.endTime);
+              var first,last,firstD,lastD;
+              if(t1 <= t2){first=st;last=et;firstD=sd;lastD=ed;}
+              else{first=et;last=st;firstD=ed;lastD=sd;}
               if(firstD && lastD && firstD !== lastD){
                 dur = firstD + " " + first + " → " + lastD + " " + last;
               } else {
