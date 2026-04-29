@@ -156,6 +156,13 @@ select.field-input option{background:var(--bg2);}
 .save-indicator{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--green);letter-spacing:0.08em;opacity:0;transition:opacity 0.3s;}
 .save-indicator.show{opacity:1;}
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-style:italic;}
+.diff-added{background:rgba(201,169,110,0.18);color:var(--accent);border-radius:2px;padding:0 1px;}
+.diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 1px;}
+.diff-view{font-family:"Cormorant Garamond",serif;font-size:0.92rem;line-height:1.9;color:var(--text-dim);padding:0.75rem 0;border-top:1px solid var(--border);margin-top:0.5rem;word-break:break-word;}
+.diff-loading{font-family:"JetBrains Mono",monospace;font-size:0.6rem;color:var(--text-muted);padding:0.5rem 0;font-style:italic;}
+.session-diff-btn{font-family:"JetBrains Mono",monospace;font-size:0.55rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;padding:0.2rem 0.5rem;margin-top:0.3rem;transition:all 0.2s;}
+.session-diff-btn:hover{border-color:var(--accent);color:var(--accent);}
+.session-diff-btn.active{border-color:var(--accent);color:var(--accent);}
 .log-panel{position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--bg2);border-left:1px solid var(--border-light);z-index:550;display:flex;flex-direction:column;transition:right 0.3s ease;overflow:hidden;}
 .log-panel.open{right:0;}
 .log-panel-header{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
@@ -609,6 +616,111 @@ function groupSessionsByDate(sessions) {
   return { groups: groups, order: order };
 }
 
+// ── DIFF ENGINE ──────────────────────────────────────────────────────────────
+function stripHtml(s) {
+  var d = document.createElement("div");
+  d.innerHTML = s || "";
+  return (d.textContent || d.innerText || "").trim();
+}
+
+function tokenize(text) {
+  // Split into words and whitespace tokens
+  return text.match(/\S+|\s+/g) || [];
+}
+
+function computeDiff(oldText, newText) {
+  // Word-level LCS diff
+  var oldTokens = tokenize(stripHtml(oldText));
+  var newTokens = tokenize(stripHtml(newText));
+  
+  // LCS using Myers-style DP (simplified)
+  var m = oldTokens.length, n = newTokens.length;
+  // For performance cap at 2000 tokens each
+  if(m > 2000) oldTokens = oldTokens.slice(0, 2000);
+  if(n > 2000) newTokens = newTokens.slice(0, 2000);
+  m = oldTokens.length; n = newTokens.length;
+  
+  var dp = [];
+  for(var i = 0; i <= m; i++) {
+    dp[i] = [];
+    for(var j = 0; j <= n; j++) dp[i][j] = 0;
+  }
+  for(var i = 1; i <= m; i++) {
+    for(var j = 1; j <= n; j++) {
+      if(oldTokens[i-1] === newTokens[j-1]) {
+        dp[i][j] = dp[i-1][j-1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+      }
+    }
+  }
+  
+  // Backtrack
+  var result = [];
+  var i = m, j = n;
+  while(i > 0 || j > 0) {
+    if(i > 0 && j > 0 && oldTokens[i-1] === newTokens[j-1]) {
+      result.unshift({type:"equal", val:oldTokens[i-1]});
+      i--; j--;
+    } else if(j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      result.unshift({type:"add", val:newTokens[j-1]});
+      j--;
+    } else {
+      result.unshift({type:"del", val:oldTokens[i-1]});
+      i--;
+    }
+  }
+  return result;
+}
+
+function renderDiff(diff) {
+  var html2 = "";
+  for(var i = 0; i < diff.length; i++) {
+    var tok = diff[i];
+    var v = tok.val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    if(tok.type === "equal") html2 += v;
+    else if(tok.type === "add") html2 += "<span class=\"diff-added\">" + v + "</span>";
+    else if(tok.type === "del") html2 += "<span class=\"diff-deleted\">" + v + "</span>";
+  }
+  return html2;
+}
+
+function storeDiffSnapshot(fr) {
+  // Store snapshot for diffing - only full text, compressed to plain text
+  if(!fr.snapshots) fr.snapshots = [];
+  var plain = stripHtml(fr.content||"");
+  var now = Date.now();
+  // Don't store duplicate snapshots
+  if(fr.snapshots.length > 0) {
+    var last = fr.snapshots[fr.snapshots.length-1];
+    if(last.text === plain) return;
+  }
+  fr.snapshots.push({ts: now, time: nowStr(), text: plain});
+  // Keep only last 50 snapshots
+  if(fr.snapshots.length > 50) fr.snapshots = fr.snapshots.slice(-50);
+}
+
+function getSnapshotBefore(fr, sessionStartTs) {
+  if(!fr.snapshots || !fr.snapshots.length) return null;
+  // Find the snapshot closest to but before this session
+  var best = null;
+  for(var i = 0; i < fr.snapshots.length; i++) {
+    var s = fr.snapshots[i];
+    if(s.ts <= sessionStartTs) best = s;
+  }
+  return best;
+}
+
+function getSnapshotAfter(fr, sessionLastTick) {
+  if(!fr.snapshots || !fr.snapshots.length) return null;
+  for(var i = 0; i < fr.snapshots.length; i++) {
+    var s = fr.snapshots[i];
+    if(s.ts >= sessionLastTick) return s;
+  }
+  // Return last snapshot as fallback
+  return fr.snapshots[fr.snapshots.length-1];
+}
+
 function parseDisplayTime(s){
   try{
     var mo={"Jan":0,"Feb":1,"Mar":2,"Apr":3,"May":4,"Jun":5,"Jul":6,"Aug":7,"Sep":8,"Oct":9,"Nov":10,"Dec":11};
@@ -697,6 +809,62 @@ function openLogPanel(fr) {
   }
   document.getElementById("logPanel").classList.add("open");
   document.getElementById("logOverlay").classList.add("open");
+}
+
+function toggleSessionDiff(btn, sId, session) {
+  var diffDiv = document.getElementById("diff_" + sId);
+  if(!diffDiv) return;
+  if(diffDiv.style.display !== "none") {
+    diffDiv.style.display = "none";
+    btn.textContent = "▶ View Changes";
+    btn.classList.remove("active");
+    return;
+  }
+  btn.textContent = "▼ Computing...";
+  btn.classList.add("active");
+  diffDiv.style.display = "block";
+  diffDiv.innerHTML = "<div class=\"diff-loading\">Computing diff...</div>";
+  
+  // Find the current fragment
+  var fr = null;
+  for(var i=0;i<state.fics.length;i++){
+    for(var j=0;j<state.fics[i].writing.length;j++){
+      if(state.fics[i].writing[j].sessions){
+        var found = state.fics[i].writing[j].sessions.some(function(s){return s.id===session.id;});
+        if(found){ fr = state.fics[i].writing[j]; break; }
+      }
+    }
+    if(fr) break;
+  }
+  
+  if(!fr || !fr.snapshots || fr.snapshots.length < 2) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">No snapshot history yet. Write and save a few more sessions to see diffs!</div>";
+    btn.textContent = "▼ View Changes";
+    return;
+  }
+  
+  // Find snapshots around this session
+  var before = getSnapshotBefore(fr, session.startTs||0);
+  var after = getSnapshotAfter(fr, session.lastTick||session.startTs||0);
+  
+  if(!before || !after || before.text === after.text) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">No text changes recorded for this session.</div>";
+    btn.textContent = "▼ View Changes";
+    return;
+  }
+  
+  // Compute diff asynchronously to avoid blocking UI
+  setTimeout(function(){
+    try {
+      var diff = computeDiff(before.text, after.text);
+      var rendered = renderDiff(diff);
+      diffDiv.innerHTML = rendered;
+      btn.textContent = "▼ Hide Changes";
+    } catch(e) {
+      diffDiv.innerHTML = "<div class=\"diff-loading\">Could not compute diff.</div>";
+      btn.textContent = "▼ View Changes";
+    }
+  }, 50);
 }
 
 function closeLogPanel() {
@@ -1365,6 +1533,8 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
   if(fic&&fic.writing[writeCtx.idx]){
     fic.writing[writeCtx.idx].content=document.getElementById("writeArea").innerHTML;
     fic.writing[writeCtx.idx].updatedAt=nowStr();
+    // Store snapshot for diff history
+    storeDiffSnapshot(fic.writing[writeCtx.idx]);
     saveData();
   }
   document.getElementById("writeScreen").classList.remove("open");
