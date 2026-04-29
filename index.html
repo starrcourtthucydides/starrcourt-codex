@@ -771,7 +771,7 @@ function openLogPanel(fr) {
           '<span class="changelog-day-arrow">&#9654;</span>' +
         '</div>' +
         '<div class="changelog-day-entries" style="display:none">' +
-          daySessions.map(function(s){
+          daySessions.map(function(s,i2){
             var dur = "";
             if(s.startTime && s.endTime && s.startTime !== s.endTime){
               var sd = s.startTime.split(" at ")[0]||"";
@@ -795,10 +795,19 @@ function openLogPanel(fr) {
             var wDiff = s.wcEnd - s.wcStart;
             var wStr = wDiff > 0 ? "+"+wDiff : wDiff < 0 ? String(wDiff) : "no change";
             var wColor = wDiff > 0 ? "var(--green,#6ec98a)" : wDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
-            return '<div class="changelog-session">' +
-              '<div class="changelog-session-time">'+h(dur)+'</div>' +
-              '<div class="changelog-session-wc" style="color:'+wColor+'">'+wStr+' words</div>' +
-              (s.note?'<div class="changelog-note">&ldquo;'+h(s.note)+'&rdquo;</div>':"")+
+            var sId = "s_"+(s.id||i2).toString().replace(/[^a-z0-9]/gi,"_");
+            return '<div class="changelog-session" id="sess_'+sId+'" onclick="toggleSessionDiff(this,\''+sId+'\','+s.startTs+','+( s.lastTick||s.startTs||0)+')">' +
+              '<div class="changelog-session-header">' +
+                '<div>' +
+                  '<div class="changelog-session-time">'+h(dur)+'</div>' +
+                  (s.note?'<div class="changelog-note">&ldquo;'+h(s.note)+'&rdquo;</div>':"") +
+                '</div>' +
+                '<div style="display:flex;align-items:center;gap:0.5rem">' +
+                  '<span class="changelog-session-wc" style="color:'+wColor+'">'+wStr+'</span>' +
+                  '<span class="session-arrow" id="arr_'+sId+'">&#9654;</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="diff-view" id="diff_'+sId+'" style="display:none"></div>' +
               '</div>';
           }).join("")+
         '</div></div>';
