@@ -695,18 +695,23 @@ function renderDiff(diff) {
 }
 
 function storeDiffSnapshot(fr) {
-  // Store snapshot for diffing - only full text, compressed to plain text
   if(!fr.snapshots) fr.snapshots = [];
-  var plain = stripHtml(fr.content||"");
+  var el = document.getElementById("writeArea");
+  var raw = (el && writeCtx && writeCtx.ficId) ? el.innerHTML : (fr.content||"");
+  var plain = stripHtml(raw);
   var now = Date.now();
-  // Don't store duplicate snapshots
   if(fr.snapshots.length > 0) {
     var last = fr.snapshots[fr.snapshots.length-1];
     if(last.text === plain) return;
   }
-  fr.snapshots.push({ts: now, time: nowStr(), text: plain});
-  // Keep only last 50 snapshots
-  if(fr.snapshots.length > 50) fr.snapshots = fr.snapshots.slice(-50);
+  var d = new Date();
+  var hr = d.getHours(); var mn = d.getMinutes();
+  var ampm = hr>=12?"PM":"AM"; hr=hr%12; if(hr===0)hr=12;
+  var timeShort = hr+":"+(mn<10?"0":"")+mn+" "+ampm;
+  var mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var dateStr = mo[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();
+  fr.snapshots.push({ts:now, time:timeShort, date:dateStr, text:plain});
+  if(fr.snapshots.length > 100) fr.snapshots = fr.snapshots.slice(-100);
 }
 
 function getSnapshotBefore(fr, sessionStartTs) {
@@ -1623,7 +1628,7 @@ document.getElementById("fmtSep").addEventListener("click",function(){
       storeDiffSnapshot(fic.writing[writeCtx.idx]);
       saveData();
     }
-  }, 3*60*1000);
+  }, 30*1000);
   document.execCommand("insertHTML",false,'<p style="text-align:center;color:var(--text-muted);letter-spacing:0.3em;margin:1rem 0;">&#x1040EF;</p>');
 });
 
