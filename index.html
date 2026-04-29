@@ -468,9 +468,26 @@ function migrateOldChangelog(fr) {
     // Find time range
     var times = entries.map(function(e){ return e.time; }).filter(Boolean);
     // Sort times to get actual earliest and latest
+    var months={"Jan":0,"Feb":1,"Mar":2,"Apr":3,"May":4,"Jun":5,"Jul":6,"Aug":7,"Sep":8,"Oct":9,"Nov":10,"Dec":11};
+    function parseTimeStr(s){
+      try {
+        var parts = s.split(" at ");
+        var dateParts = parts[0].trim().split(" ");
+        var mo = months[dateParts[0]]||0;
+        var dy = parseInt(dateParts[1])||0;
+        var yr = parseInt(dateParts[2])||0;
+        var timeParts = (parts[1]||"").trim().split(" ");
+        var hm = timeParts[0].split(":");
+        var hr = parseInt(hm[0])||0;
+        var mn = parseInt(hm[1])||0;
+        var pm = timeParts[1]==="PM";
+        if(pm && hr!==12) hr+=12;
+        if(!pm && hr===12) hr=0;
+        return new Date(yr, mo, dy, hr, mn).getTime();
+      } catch(e){ return 0; }
+    }
     var sortedTimes = times.slice().sort(function(a,b){
-      // Simple string sort works for "Apr 28, 2026 at 9:01 AM" format
-      return a < b ? -1 : a > b ? 1 : 0;
+      return parseTimeStr(a) - parseTimeStr(b);
     });
     var startTime = sortedTimes[0] || (date + " at 12:00 AM");
     var endTime = sortedTimes[sortedTimes.length-1] || startTime;
