@@ -160,9 +160,7 @@ select.field-input option{background:var(--bg2);}
 .diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 1px;}
 .diff-view{font-family:"Cormorant Garamond",serif;font-size:0.92rem;line-height:1.9;color:var(--text-dim);padding:0.75rem 0;border-top:1px solid var(--border);margin-top:0.5rem;word-break:break-word;}
 .diff-loading{font-family:"JetBrains Mono",monospace;font-size:0.6rem;color:var(--text-muted);padding:0.5rem 0;font-style:italic;}
-.session-diff-btn{font-family:"JetBrains Mono",monospace;font-size:0.55rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;padding:0.2rem 0.5rem;margin-top:0.3rem;transition:all 0.2s;}
-.session-diff-btn:hover{border-color:var(--accent);color:var(--accent);}
-.session-diff-btn.active{border-color:var(--accent);color:var(--accent);}
+
 .log-panel{position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--bg2);border-left:1px solid var(--border-light);z-index:550;display:flex;flex-direction:column;transition:right 0.3s ease;overflow:hidden;}
 .log-panel.open{right:0;}
 .log-panel-header{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
@@ -182,10 +180,14 @@ select.field-input option{background:var(--bg2);}
 .changelog-day-arrow{font-size:0.6rem;color:var(--text-muted);transition:transform 0.2s;margin-left:auto;}
 .changelog-day-arrow.open{transform:rotate(90deg);}
 .changelog-day-entries{padding:0 0.85rem 0.6rem;}
-.changelog-session{padding:0.4rem 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;}
+.changelog-session{padding:0.5rem 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;}
+.changelog-session:hover{background:rgba(201,169,110,0.04);}
 .changelog-session:last-child{border-bottom:none;}
-.changelog-session-time{font-family:"JetBrains Mono",monospace;font-size:0.6rem;color:var(--text-dim);flex:1;}
+.changelog-session-header{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
+.changelog-session-time{font-family:"JetBrains Mono",monospace;font-size:0.62rem;color:var(--text-dim);}
 .changelog-session-wc{font-family:"JetBrains Mono",monospace;font-size:0.6rem;font-weight:600;}
+.session-arrow{font-size:0.55rem;color:var(--text-muted);transition:transform 0.2s;display:inline-block;}
+.session-arrow.open{transform:rotate(90deg);}
 .changelog-title{font-family:"JetBrains Mono",monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem;}
 .changelog-entry{padding:0.5rem 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:0.2rem;}
 .changelog-entry:last-child{border-bottom:none;}
@@ -811,58 +813,70 @@ function openLogPanel(fr) {
   document.getElementById("logOverlay").classList.add("open");
 }
 
-function toggleSessionDiff(btn, sId, session) {
+function toggleSessionDiff(row, sId, sessionJson) {
   var diffDiv = document.getElementById("diff_" + sId);
+  var arrow = document.getElementById("arr_" + sId);
   if(!diffDiv) return;
+  
   if(diffDiv.style.display !== "none") {
     diffDiv.style.display = "none";
-    btn.textContent = "▶ View Changes";
-    btn.classList.remove("active");
+    if(arrow) arrow.classList.remove("open");
     return;
   }
-  btn.textContent = "▼ Computing...";
-  btn.classList.add("active");
-  diffDiv.style.display = "block";
-  diffDiv.innerHTML = "<div class=\"diff-loading\">Computing diff...</div>";
   
-  // Find the current fragment
+  if(arrow) arrow.classList.add("open");
+  diffDiv.style.display = "block";
+  
+  // If already computed just show it
+  if(diffDiv.innerHTML && diffDiv.innerHTML.indexOf("diff-loading") === -1 && diffDiv.innerHTML.length > 10) return;
+  
+  diffDiv.innerHTML = "<div class=\"diff-loading\">Computing changes...</div>";
+  
+  var session = {};
+  try { session = JSON.parse(sessionJson); } catch(e) {}
+  
+  // Find fragment containing this session
   var fr = null;
   for(var i=0;i<state.fics.length;i++){
     for(var j=0;j<state.fics[i].writing.length;j++){
-      if(state.fics[i].writing[j].sessions){
-        var found = state.fics[i].writing[j].sessions.some(function(s){return s.id===session.id;});
-        if(found){ fr = state.fics[i].writing[j]; break; }
+      var w = state.fics[i].writing[j];
+      if(w.sessions && w.sessions.some(function(s){return s.id===session.id;})){
+        fr = w; break;
       }
     }
     if(fr) break;
   }
   
   if(!fr || !fr.snapshots || fr.snapshots.length < 2) {
-    diffDiv.innerHTML = "<div class=\"diff-loading\">No snapshot history yet. Write and save a few more sessions to see diffs!</div>";
-    btn.textContent = "▼ View Changes";
+    diffDiv.innerHTML = "<div class=\"diff-loading\">No diff history yet — snapshots are taken each time you Save &amp; Close. Write a session and save to start tracking changes!</div>";
     return;
   }
   
-  // Find snapshots around this session
   var before = getSnapshotBefore(fr, session.startTs||0);
   var after = getSnapshotAfter(fr, session.lastTick||session.startTs||0);
   
-  if(!before || !after || before.text === after.text) {
-    diffDiv.innerHTML = "<div class=\"diff-loading\">No text changes recorded for this session.</div>";
-    btn.textContent = "▼ View Changes";
+  if(!before || !after) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">Snapshot not found for this session.</div>";
+    return;
+  }
+  if(before.text === after.text) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">No text changes in this session.</div>";
     return;
   }
   
-  // Compute diff asynchronously to avoid blocking UI
   setTimeout(function(){
     try {
       var diff = computeDiff(before.text, after.text);
       var rendered = renderDiff(diff);
-      diffDiv.innerHTML = rendered;
-      btn.textContent = "▼ Hide Changes";
+      var added = diff.filter(function(t){return t.type==="add"&&t.val.trim();}).length;
+      var deleted = diff.filter(function(t){return t.type==="del"&&t.val.trim();}).length;
+      var summary = "<div style=\"display:flex;gap:0.75rem;margin-bottom:0.5rem;font-family:JetBrains Mono,monospace;font-size:0.55rem\">"
+        +(added?"<span style=\"color:var(--accent)\">+"+added+" words</span>":"")
+        +(deleted?"<span style=\"color:#c4563a\">-"+deleted+" words</span>":"")
+        +"</div>";
+      diffDiv.innerHTML = summary + rendered;
     } catch(e) {
       diffDiv.innerHTML = "<div class=\"diff-loading\">Could not compute diff.</div>";
-      btn.textContent = "▼ View Changes";
     }
   }, 50);
 }
