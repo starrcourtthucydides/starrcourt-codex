@@ -467,8 +467,13 @@ function migrateOldChangelog(fr) {
     var wcEnd = wcEntries.length ? wcEntries[wcEntries.length-1].wcAfter : 0;
     // Find time range
     var times = entries.map(function(e){ return e.time; }).filter(Boolean);
-    var startTime = times[times.length-1] || (date + " at 12:00 AM");
-    var endTime = times[0] || startTime;
+    // Sort times to get actual earliest and latest
+    var sortedTimes = times.slice().sort(function(a,b){
+      // Simple string sort works for "Apr 28, 2026 at 9:01 AM" format
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+    var startTime = sortedTimes[0] || (date + " at 12:00 AM");
+    var endTime = sortedTimes[sortedTimes.length-1] || startTime;
     // Check if a session for this date already exists
     var exists = fr.sessions.some(function(s){
       return s.startTime && s.startTime.split(" at ")[0] === date;
@@ -496,6 +501,7 @@ function migrateOldChangelog(fr) {
   });
 
   fr._migrated = true;
+  fr._migrateVersion = 2;
 }
 
 function loadData() {
@@ -510,6 +516,10 @@ function loadData() {
         // Migrate old changelog entries to sessions
         if (f.writing) {
           f.writing.forEach(function(fr) {
+            // Reset migration flag so fixed migration runs again
+            if(fr._migrated && fr._migrateVersion !== 2) {
+              fr._migrated = false;
+            }
             migrateOldChangelog(fr);
           });
         }
@@ -613,7 +623,7 @@ function openLogPanel(fr) {
               var ed = s.endTime.split(" at ")[0]||"";
               var st = s.startTime.split(" at ")[1]||s.startTime;
               var et = s.endTime.split(" at ")[1]||s.endTime;
-              var isForward = (s.startTs||0) <= (s.lastTick||s.startTs||1);
+              var isForward = s.migrated ? (s.wcStart <= s.wcEnd) : ((s.startTs||0) <= (s.lastTick||s.startTs||1));
               var first = isForward ? st : et;
               var last = isForward ? et : st;
               var firstD = isForward ? sd : ed;
