@@ -158,7 +158,11 @@ select.field-input option{background:var(--bg2);}
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-style:italic;}
 .diff-added{background:rgba(201,169,110,0.18);color:var(--accent);border-radius:2px;padding:0 2px;margin:0 1px;}
 .diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 2px;margin:0 1px;display:inline;}
+.diff-added-word{color:var(--accent);}
+.diff-deleted-word{color:#c4563a;text-decoration:line-through;margin-right:1px;}
 .diff-view{font-family:"Cormorant Garamond",serif;font-size:0.92rem;line-height:1.9;color:var(--text-dim);padding:0.75rem 0;border-top:1px solid var(--border);margin-top:0.5rem;word-break:break-word;}
+.diff-view p{margin:0 0 1rem 0;}
+.diff-view p:last-child{margin-bottom:0;}
 .snap-entry{border-bottom:1px solid var(--border);cursor:pointer;}
 .snap-entry:last-child{border-bottom:none;}
 .snap-entry:hover{background:rgba(201,169,110,0.04);}
@@ -720,21 +724,75 @@ function computeDiff(oldText, newText) {
   return result;
 }
 
+function charDiff(oldWord, newWord) {
+  // Character-level LCS for two short strings
+  var o = oldWord.split(""), n = newWord.split("");
+  var m = o.length, nlen = n.length;
+  var dp2 = [];
+  for(var i=0;i<=m;i++){dp2[i]=[];for(var j=0;j<=nlen;j++)dp2[i][j]=0;}
+  for(var i=1;i<=m;i++)for(var j=1;j<=nlen;j++){
+    dp2[i][j]=o[i-1]===n[j-1]?dp2[i-1][j-1]+1:Math.max(dp2[i-1][j],dp2[i][j-1]);
+  }
+  var res=[],ci=m,cj=nlen;
+  while(ci>0||cj>0){
+    if(ci>0&&cj>0&&o[ci-1]===n[cj-1]){res.unshift({type:"equal",val:o[ci-1]});ci--;cj--;}
+    else if(cj>0&&(ci===0||dp2[ci][cj-1]>=dp2[ci-1][cj])){res.unshift({type:"add",val:n[cj-1]});cj--;}
+    else{res.unshift({type:"del",val:o[ci-1]});ci--;}
+  }
+  return res;
+}
+
 function renderDiff(diff) {
-  var html2 = "";
+  // Build segments split by paragraph breaks (\n\n) — each becomes a <p>
+  var segments = [[]]; // array of token arrays
   for(var i = 0; i < diff.length; i++) {
     var tok = diff[i];
-    // Render newlines as line breaks regardless of type
-    if(tok.val === "\n" || tok.val === "\n\n") {
-      html2 += tok.val === "\n\n" ? "<br><br>" : "<br>";
-      continue;
+    if(tok.val === "\n\n") {
+      segments.push([]);
+    } else {
+      segments[segments.length-1].push(tok);
     }
-    var v = tok.val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-    if(tok.type === "equal") html2 += v;
-    else if(tok.type === "add") html2 += "<span class=\"diff-added\">" + v + "</span>";
-    else if(tok.type === "del") html2 += "<span class=\"diff-deleted\">" + v + "</span>";
   }
-  return html2;
+
+  function renderSegment(tokens) {
+    var html2 = "";
+    var j = 0;
+    while(j < tokens.length) {
+      var tok = tokens[j];
+      if(tok.val === "\n") { html2 += "<br>"; j++; continue; }
+      var v = tok.val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      if(tok.type === "equal") {
+        html2 += v; j++;
+      } else if(tok.type === "del") {
+        var next = tokens[j+1];
+        if(next && next.type === "add" && !/^\n/.test(tok.val) && !/^\n/.test(next.val)) {
+          var subDiff = charDiff(tok.val, next.val);
+          var delPart = "", addPart = "";
+          subDiff.forEach(function(c){
+            var cv = c.val.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+            if(c.type==="equal"){delPart+=cv;addPart+=cv;}
+            else if(c.type==="del"){delPart+='<span class="diff-deleted">'+cv+'</span>';}
+            else if(c.type==="add"){addPart+='<span class="diff-added">'+cv+'</span>';}
+          });
+          var hasDel = subDiff.some(function(c){return c.type==="del";});
+          var hasAdd = subDiff.some(function(c){return c.type==="add";});
+          if(hasDel) html2 += '<span class="diff-deleted-word">'+delPart+'</span>';
+          if(hasAdd) html2 += '<span class="diff-added-word">'+addPart+'</span>';
+          j += 2;
+        } else {
+          html2 += '<span class="diff-deleted">' + v + '</span>'; j++;
+        }
+      } else if(tok.type === "add") {
+        html2 += '<span class="diff-added">' + v + '</span>'; j++;
+      } else { j++; }
+    }
+    return html2;
+  }
+
+  return segments.map(function(seg){
+    var inner = renderSegment(seg).trim();
+    return inner ? "<p>" + inner + "</p>" : "";
+  }).filter(Boolean).join("");
 }
 
 function storeDiffSnapshot(fr, usesaved) {
@@ -1261,7 +1319,7 @@ function openWriteScreen(idx){
   var baselineText = stripHtml(fr.content||"");
   writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, lastSnapshotText:baselineText, sessionId:null, openTime:nowStr(), openTs:Date.now()};
 
-  // Auto-snapshot every 90 seconds while writing (Google Docs-style)
+  // Auto-snapshot every 30 seconds while writing (matches Google Docs timing)
   writeCtx.snapTimer = setInterval(function(){
     var fic2=null;
     for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic2=state.fics[i];break;}}
@@ -1269,7 +1327,7 @@ function openWriteScreen(idx){
       takeSnapshot(fic2.writing[writeCtx.idx], writeCtx.lastSnapshotText||writeCtx.baselineText||"");
       saveData();
     }
-  }, 90*1000);
+  }, 30*1000);
   var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
   document.getElementById("writeMeta").innerHTML=
     '<div class="write-meta-item"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span></div>'+
@@ -1673,7 +1731,7 @@ document.getElementById("deleteFragBtn").addEventListener("click",function(){if(
 
 document.getElementById("writeArea").addEventListener("input",function(){
   updateWriteWc();
-  // Auto-save content only — session/log entries are handled by the snapshot timer
+  // Auto-save content
   clearTimeout(writeCtx.saveTimer);
   writeCtx.saveTimer=setTimeout(function(){
     var fic=null;
@@ -1685,11 +1743,22 @@ document.getElementById("writeArea").addEventListener("input",function(){
       saveData();
     }
   },800);
+  // Pause-based snapshot: if you stop typing for 30s, auto-snapshot that chunk
+  clearTimeout(writeCtx.pauseTimer);
+  writeCtx.pauseTimer=setTimeout(function(){
+    var fic=null;
+    for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
+    if(fic&&fic.writing[writeCtx.idx]){
+      takeSnapshot(fic.writing[writeCtx.idx], writeCtx.lastSnapshotText||writeCtx.baselineText||"");
+      saveData();
+    }
+  }, 30*1000);
 });
 
 document.getElementById("writeSaveBtn").addEventListener("click",function(){
   if(writeCtx.snapTimer){clearInterval(writeCtx.snapTimer);writeCtx.snapTimer=null;}
   clearTimeout(writeCtx.saveTimer);
+  clearTimeout(writeCtx.pauseTimer);
   var fic=null;
   for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
   if(fic&&fic.writing[writeCtx.idx]){
