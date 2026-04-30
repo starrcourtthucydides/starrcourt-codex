@@ -779,9 +779,13 @@ function openLogPanel(fr, ficId, fragIdx) {
     var grouped = groupSessionsByDate(allSessions);
     grouped.order.slice().reverse().forEach(function(date){
       var daySessions = grouped.groups[date].slice().reverse();
-      var dayWcStart = daySessions[daySessions.length-1].wcStart;
-      var dayWcEnd = daySessions[0].wcEnd;
-      var dayDiff = dayWcEnd - dayWcStart;
+      var countW2=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
+      var dayDiff = daySessions.reduce(function(sum,s){
+        if(s.baselineText!==undefined && s.finalText!==undefined){
+          return sum + (countW2(s.finalText) - countW2(s.baselineText));
+        }
+        return sum + (s.wcEnd - s.wcStart);
+      },0);
       var diffStr = dayDiff > 0 ? "+"+dayDiff : dayDiff < 0 ? String(dayDiff) : "no change";
       var diffColor = dayDiff > 0 ? "var(--green,#6ec98a)" : dayDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
       html2 += '<div class="changelog-day">' +
@@ -813,7 +817,14 @@ function openLogPanel(fr, ficId, fragIdx) {
             } else {
               dur = (s.startTime||"").split(" at ")[1]||s.startTime||"";
             }
-            var wDiff = s.wcEnd - s.wcStart;
+            // Use baseline/final for accurate word counts when available
+            var countW=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
+            var wDiff;
+            if(s.baselineText!==undefined && s.finalText!==undefined){
+              wDiff = countW(s.finalText) - countW(s.baselineText);
+            } else {
+              wDiff = s.wcEnd - s.wcStart;
+            }
             var wStr = wDiff > 0 ? "+"+wDiff : wDiff < 0 ? String(wDiff) : "no change";
             var wColor = wDiff > 0 ? "var(--green,#6ec98a)" : wDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
             var sId = (s.id||"s_"+i2).toString().replace(/[^a-z0-9_]/gi,"_");
@@ -926,7 +937,10 @@ function toggleSessionDiff(row, sId, startTs, lastTick) {
   }
 
   if(beforeText === afterText) {
-    diffDiv.innerHTML = "<div class=\"diff-loading\">No text changes in this session.</div>";
+    var msg = (!beforeText || beforeText.trim()==="")
+      ? "First write on this fragment — all content shown as added above."
+      : "No text changes in this session.";
+    diffDiv.innerHTML = "<div class=\"diff-loading\">"+msg+"</div>";
     return;
   }
 
