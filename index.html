@@ -771,13 +771,27 @@ function openLogPanel(fr, ficId, fragIdx) {
   window._logCtx = {ficId: ficId||state.activeFicId, fragIdx: fragIdx!==undefined ? fragIdx : (writeCtx.idx||0)};
   var body = document.getElementById("logPanelBody");
   var allSessions = fr.sessions && fr.sessions.length ? fr.sessions : [];
-  // Deduplicate: remove sessions where both baselineText and finalText are identical to an earlier session
-  var seen = [];
-  allSessions = allSessions.filter(function(s){
+  // Normalize helper — collapse all whitespace for comparison
+  var norm = function(s){ return (s||"").replace(/\s+/g," ").trim(); };
+  // Deduplicate:
+  // 1. Same baseline+final (exact duplicate)
+  // 2. Same finalText as a later session (superseded — keep the LATER one which has a real baseline)
+  var seenKeys = [];
+  var seenFinals = [];
+  // First pass: collect all finalTexts so we can mark superseded ones
+  var finalTexts = allSessions.map(function(s){ return norm(s.finalText||""); });
+  allSessions = allSessions.filter(function(s, idx){
     if(s.baselineText===undefined || s.finalText===undefined) return true; // keep legacy
-    var key = (s.baselineText||"").trim() + "|||" + (s.finalText||"").trim();
-    if(seen.indexOf(key) !== -1) return false;
-    seen.push(key);
+    var bl = norm(s.baselineText);
+    var fn = norm(s.finalText);
+    // Drop if identical to an already-seen baseline+final pair
+    var key = bl + "|||" + fn;
+    if(seenKeys.indexOf(key) !== -1) return false;
+    seenKeys.push(key);
+    // Drop if this session's finalText appears as the finalText of a LATER session
+    // (it's superseded — the later session's diff already covers the full picture)
+    var laterHasSameFinal = finalTexts.slice(idx+1).some(function(f){ return f === fn; });
+    if(laterHasSameFinal) return false;
     return true;
   });
   var oldEntries = fr.changelog && fr.changelog.length ? fr.changelog : [];
@@ -806,26 +820,8 @@ function openLogPanel(fr, ficId, fragIdx) {
         '</div>' +
         '<div class="changelog-day-entries" style="display:none">' +
           daySessions.map(function(s,i2){
-            var dur = "";
-            if(s.startTime && s.endTime && s.startTime !== s.endTime){
-              var sd = s.startTime.split(" at ")[0]||"";
-              var ed = s.endTime.split(" at ")[0]||"";
-              var st = s.startTime.split(" at ")[1]||s.startTime;
-              var et = s.endTime.split(" at ")[1]||s.endTime;
-              // Always sort by parsing actual time values
-              var t1 = parseDisplayTime(s.startTime);
-              var t2 = parseDisplayTime(s.endTime);
-              var first,last,firstD,lastD;
-              if(t1 <= t2){first=st;last=et;firstD=sd;lastD=ed;}
-              else{first=et;last=st;firstD=ed;lastD=sd;}
-              if(firstD && lastD && firstD !== lastD){
-                dur = firstD + " " + first + " → " + lastD + " " + last;
-              } else {
-                dur = first + " – " + last;
-              }
-            } else {
-              dur = (s.startTime||"").split(" at ")[1]||s.startTime||"";
-            }
+            // Show only the save time (endTime), like Google Docs — no range
+            var saveTime = (s.endTime||s.startTime||"").split(" at ")[1] || (s.endTime||s.startTime||"");
             // Use baseline/final for accurate word counts when available
             var countW=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
             var wDiff;
@@ -840,7 +836,7 @@ function openLogPanel(fr, ficId, fragIdx) {
             return '<div class="changelog-session" id="sess_'+sId+'" onclick="toggleSessionDiff(this,\''+sId+'\','+s.startTs+','+( s.lastTick||s.startTs||0)+')">' +
               '<div class="changelog-session-header">' +
                 '<div>' +
-                  '<div class="changelog-session-time">'+h(dur)+'</div>' +
+                  '<div class="changelog-session-time">'+h(saveTime)+'</div>' +
                   (s.note?'<div class="changelog-note">&ldquo;'+h(s.note)+'&rdquo;</div>':"") +
                 '</div>' +
                 '<div style="display:flex;align-items:center;gap:0.5rem">' +
