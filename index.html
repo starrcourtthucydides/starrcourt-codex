@@ -857,84 +857,76 @@ function toggleSessionDiff(row, sId, startTs, lastTick) {
   var diffDiv = document.getElementById("diff_" + sId);
   var arrow = document.getElementById("arr_" + sId);
   if(!diffDiv) return;
-  
+
   if(diffDiv.style.display !== "none") {
     diffDiv.style.display = "none";
     if(arrow) arrow.classList.remove("open");
     return;
   }
-  
+
   if(arrow) arrow.classList.add("open");
   diffDiv.style.display = "block";
-  
-  // If already computed just show it
   if(diffDiv.dataset.loaded) return;
-  
+
   diffDiv.innerHTML = "<div class=\"diff-loading\">Computing changes...</div>";
-  
-  // Find the fragment — prefer the one currently open in writeCtx, 
-  // but scan all fics as fallback (log can be opened from detail view)
-  var fr = null;
-  // Try writeCtx first
-  if(writeCtx && writeCtx.ficId && writeCtx.idx !== undefined) {
-    for(var i=0;i<state.fics.length;i++){
-      if(state.fics[i].id===writeCtx.ficId){
-        fr = state.fics[i].writing[writeCtx.idx]||null;
-        break;
-      }
-    }
-  }
-  // If not found via writeCtx, find via the log panel's fragment reference
-  if(!fr && window._logPanelFr) {
-    fr = window._logPanelFr;
-  }
-  // Last resort: scan all
+
+  // Find the fragment via _logPanelFr (set when log opens)
+  var fr = window._logPanelFr || null;
   if(!fr) {
     outer: for(var i=0;i<state.fics.length;i++){
       for(var j=0;j<state.fics[i].writing.length;j++){
-        var w = state.fics[i].writing[j];
-        if(w.sessions && w.sessions.some(function(s){
-          return s.startTs===startTs||(s.lastTick||s.startTs)===lastTick;
-        })){
-          fr = w; break outer;
+        var w=state.fics[i].writing[j];
+        if(w.sessions && w.sessions.some(function(s){return s.startTs===startTs;})){
+          fr=w; break outer;
         }
       }
     }
   }
-  
-  if(!fr || !fr.snapshots || fr.snapshots.length < 1) {
-    diffDiv.innerHTML = "<div class=\"diff-loading\">No snapshot history yet — open a fragment, write something, then Save &amp; Close to record changes.</div>";
+  if(!fr || !fr.sessions) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">Fragment not found.</div>";
     return;
   }
-  
-  var before = getSnapshotBefore(fr, startTs||0);
-  var after = getSnapshotAfter(fr, lastTick||startTs||0);
-  
-  if(!before && !after) {
-    diffDiv.innerHTML = "<div class=\"diff-loading\">Snapshot not found for this session.</div>";
+
+  // Find this specific session
+  var session = null;
+  for(var k=0;k<fr.sessions.length;k++){
+    if(fr.sessions[k].startTs===startTs){ session=fr.sessions[k]; break; }
+  }
+  if(!session) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">Session not found.</div>";
     return;
   }
-  // If only one snapshot exists, show full text as added
-  if(!before) {
-    before = {text:""};
+
+  // Use the baseline/final stored directly on the session
+  var beforeText = session.baselineText !== undefined ? session.baselineText : null;
+  var afterText  = session.finalText   !== undefined ? session.finalText   : null;
+
+  // Fallback to legacy snapshots for old sessions
+  if(beforeText === null || afterText === null) {
+    if(!fr.snapshots || fr.snapshots.length < 1) {
+      diffDiv.innerHTML = "<div class=\"diff-loading\">No diff yet — write something and Save &amp; Close to record changes.</div>";
+      return;
+    }
+    var snap0 = getSnapshotBefore(fr, startTs||0);
+    var snap1 = getSnapshotAfter(fr, lastTick||startTs||0);
+    beforeText = snap0 ? snap0.text : "";
+    afterText  = snap1 ? snap1.text : (fr.snapshots[fr.snapshots.length-1].text);
   }
-  if(!after) {
-    after = fr.snapshots[fr.snapshots.length-1];
-  }
-  if(before.text === after.text) {
-    diffDiv.innerHTML = "<div class=\"diff-loading\">No text changes detected in this session.</div>";
+
+  if(beforeText === afterText) {
+    diffDiv.innerHTML = "<div class=\"diff-loading\">No text changes in this session.</div>";
     return;
   }
-  
+
   setTimeout(function(){
     try {
-      var diff = computeDiff(before.text, after.text);
+      var diff = computeDiff(beforeText, afterText);
       var rendered = renderDiff(diff);
-      var added = diff.filter(function(t){return t.type==="add"&&t.val.trim();}).length;
-      var deleted = diff.filter(function(t){return t.type==="del"&&t.val.trim();}).length;
+      var added   = diff.filter(function(t){return t.type==="add" && t.val.trim();}).length;
+      var deleted = diff.filter(function(t){return t.type==="del" && t.val.trim();}).length;
       var summary = "<div style=\"display:flex;gap:0.75rem;margin-bottom:0.5rem;font-family:JetBrains Mono,monospace;font-size:0.55rem\">"
-        +(added?"<span style=\"color:var(--accent)\">+"+added+" words</span>":"")
-        +(deleted?"<span style=\"color:#c4563a\">-"+deleted+" words</span>":"")
+        +(added  ?"<span style=\"color:var(--accent)\">+"+added  +" words</span>":"")
+        +(deleted?"<span style=\"color:#c4563a\">−"+deleted+" words</span>":"")
         +"</div>";
       diffDiv.innerHTML = summary + "<div class=\"diff-view\">" + rendered + "</div>";
       diffDiv.dataset.loaded = "1";
@@ -1203,25 +1195,9 @@ function openWriteScreen(idx){
   // Clear any existing snapshot timer
   if(writeCtx.snapTimer) clearInterval(writeCtx.snapTimer);
   var fr=getFic().writing[idx];
-  writeCtx={ficId:state.activeFicId,idx:idx};
-  // Take baseline snapshot BEFORE any edits happen this session
-  setTimeout(function(){
-    var fic=null;
-    for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
-    if(fic&&fic.writing[writeCtx.idx]){
-      storeDiffSnapshot(fic.writing[writeCtx.idx], true); // baseline from saved content
-      saveData();
-    }
-    // Auto-snapshot every 30 seconds while writing
-    writeCtx.snapTimer=setInterval(function(){
-      var fic2=null;
-      for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic2=state.fics[i];break;}}
-      if(fic2&&fic2.writing[writeCtx.idx]){
-        storeDiffSnapshot(fic2.writing[writeCtx.idx]);
-        saveData();
-      }
-    },30*1000);
-  },200);
+  // Capture baseline text RIGHT NOW from saved data — before the editor loads anything
+  var baselineText = stripHtml(fr.content||"");
+  writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, sessionId:null};
   var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
   document.getElementById("writeMeta").innerHTML=
     '<div class="write-meta-item"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span></div>'+
@@ -1642,7 +1618,9 @@ document.getElementById("writeArea").addEventListener("input",function(){
         var GAP=30*60*1000;
         var lastS=fr2.sessions[fr2.sessions.length-1];
         if(!lastS||now-lastS.lastTick>GAP){
-          fr2.sessions.push({id:"s_"+now,startTime:nowStr(),startTs:now,lastTick:now,endTime:nowStr(),wcStart:oldWc,wcEnd:newWc,note:""});
+          var newSess={id:"s_"+now,startTime:nowStr(),startTs:now,lastTick:now,endTime:nowStr(),wcStart:oldWc,wcEnd:newWc,note:"",baselineText:writeCtx.baselineText||""};
+          fr2.sessions.push(newSess);
+          writeCtx.sessionId=newSess.id;
         } else {
           lastS.lastTick=now;
           lastS.endTime=nowStr();
@@ -1661,10 +1639,25 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
   var fic=null;
   for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
   if(fic&&fic.writing[writeCtx.idx]){
-    fic.writing[writeCtx.idx].content=document.getElementById("writeArea").innerHTML;
-    fic.writing[writeCtx.idx].updatedAt=nowStr();
-    // Take final snapshot on save
-    storeDiffSnapshot(fic.writing[writeCtx.idx]);
+    var fr3=fic.writing[writeCtx.idx];
+    fr3.content=document.getElementById("writeArea").innerHTML;
+    fr3.updatedAt=nowStr();
+    // Store finalText on the active session so diff always works
+    var finalText=stripHtml(fr3.content);
+    if(writeCtx.sessionId && fr3.sessions){
+      for(var si=0;si<fr3.sessions.length;si++){
+        if(fr3.sessions[si].id===writeCtx.sessionId){
+          fr3.sessions[si].finalText=finalText;
+          // If no baseline was stored yet (edge case), store one now
+          if(!fr3.sessions[si].baselineText && writeCtx.baselineText!==undefined){
+            fr3.sessions[si].baselineText=writeCtx.baselineText;
+          }
+          break;
+        }
+      }
+    }
+    // Also keep legacy snapshot for older sessions
+    storeDiffSnapshot(fr3);
     saveData();
   }
   document.getElementById("writeScreen").classList.remove("open");
