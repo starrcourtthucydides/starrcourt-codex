@@ -156,8 +156,8 @@ select.field-input option{background:var(--bg2);}
 .save-indicator{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--green);letter-spacing:0.08em;opacity:0;transition:opacity 0.3s;}
 .save-indicator.show{opacity:1;}
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-style:italic;}
-.diff-added{background:rgba(201,169,110,0.18);color:var(--accent);border-radius:2px;padding:0 1px;}
-.diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 1px;}
+.diff-added{background:rgba(201,169,110,0.18);color:var(--accent);border-radius:2px;padding:0 2px;margin:0 1px;}
+.diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 2px;margin:0 1px;display:inline;}
 .diff-view{font-family:"Cormorant Garamond",serif;font-size:0.92rem;line-height:1.9;color:var(--text-dim);padding:0.75rem 0;border-top:1px solid var(--border);margin-top:0.5rem;word-break:break-word;}
 .snap-entry{border-bottom:1px solid var(--border);cursor:pointer;}
 .snap-entry:last-child{border-bottom:none;}
@@ -626,7 +626,36 @@ function groupSessionsByDate(sessions) {
   return { groups: groups, order: order };
 }
 
-// ── DIFF ENGINE ──────────────────────────────────────────────────────────────
+// ── SNAPSHOT ENGINE (Google Docs-style auto-log) ─────────────────────────────
+// Called every ~90s while writing and once on Save & Close.
+// Creates a session entry only if text actually changed since last snapshot.
+function takeSnapshot(fr, fromText) {
+  var el = document.getElementById("writeArea");
+  var currentText = el ? stripHtml(el.innerHTML) : stripHtml(fr.content||"");
+  var norm2 = function(s){ return (s||"").replace(/\s+/g," ").trim(); };
+  var before = norm2(fromText);
+  var after  = norm2(currentText);
+  if(before === after) return; // nothing changed — no entry
+  if(!fr.sessions) fr.sessions = [];
+  var countW = function(s){ return s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length; };
+  var sessId = "s_" + Date.now();
+  fr.sessions.push({
+    id: sessId,
+    startTime: nowStr(),
+    startTs: Date.now(),
+    endTime: nowStr(),
+    lastTick: Date.now(),
+    wcStart: countW(before),
+    wcEnd: countW(after),
+    note: "",
+    baselineText: before,
+    finalText: after
+  });
+  // Advance the baseline for the next snapshot window
+  writeCtx.lastSnapshotText = after;
+}
+
+
 function stripHtml(s) {
   // Preserve paragraph/line breaks before stripping tags
   var withBreaks = (s||"")
@@ -1230,7 +1259,17 @@ function openWriteScreen(idx){
   var fr=getFic().writing[idx];
   // Capture baseline text RIGHT NOW from saved data — before the editor loads anything
   var baselineText = stripHtml(fr.content||"");
-  writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, sessionId:null, openTime:nowStr(), openTs:Date.now()};
+  writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, lastSnapshotText:baselineText, sessionId:null, openTime:nowStr(), openTs:Date.now()};
+
+  // Auto-snapshot every 90 seconds while writing (Google Docs-style)
+  writeCtx.snapTimer = setInterval(function(){
+    var fic2=null;
+    for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic2=state.fics[i];break;}}
+    if(fic2&&fic2.writing[writeCtx.idx]){
+      takeSnapshot(fic2.writing[writeCtx.idx], writeCtx.lastSnapshotText||writeCtx.baselineText||"");
+      saveData();
+    }
+  }, 90*1000);
   var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
   document.getElementById("writeMeta").innerHTML=
     '<div class="write-meta-item"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span></div>'+
@@ -1634,33 +1673,14 @@ document.getElementById("deleteFragBtn").addEventListener("click",function(){if(
 
 document.getElementById("writeArea").addEventListener("input",function(){
   updateWriteWc();
-  // Auto-save every keystroke with debounce
+  // Auto-save content only — session/log entries are handled by the snapshot timer
   clearTimeout(writeCtx.saveTimer);
   writeCtx.saveTimer=setTimeout(function(){
     var fic=null;
     for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
     if(fic&&fic.writing[writeCtx.idx]){
       var fr2=fic.writing[writeCtx.idx];
-      var newContent=document.getElementById("writeArea").innerHTML;
-      var countW=function(s){return s.replace(/<[^>]*>/g," ").trim().split(/\s+/).filter(function(w){return w.length>0;}).length;};
-      var oldWc=fr2.content?countW(fr2.content):0;
-      var newWc=countW(newContent);
-      if(Math.abs(newWc-oldWc)>=1){
-        if(!fr2.sessions) fr2.sessions=[];
-        var now=Date.now();
-        var GAP=30*60*1000;
-        var lastS=fr2.sessions[fr2.sessions.length-1];
-        if(!lastS||now-lastS.lastTick>GAP){
-          var newSess={id:"s_"+now,startTime:nowStr(),startTs:now,lastTick:now,endTime:nowStr(),wcStart:oldWc,wcEnd:newWc,note:"",baselineText:writeCtx.baselineText||""};
-          fr2.sessions.push(newSess);
-          writeCtx.sessionId=newSess.id;
-        } else {
-          lastS.lastTick=now;
-          lastS.endTime=nowStr();
-          lastS.wcEnd=newWc;
-        }
-      }
-      fr2.content=newContent;
+      fr2.content=document.getElementById("writeArea").innerHTML;
       fr2.updatedAt=nowStr();
       saveData();
     }
@@ -1669,38 +1689,15 @@ document.getElementById("writeArea").addEventListener("input",function(){
 
 document.getElementById("writeSaveBtn").addEventListener("click",function(){
   if(writeCtx.snapTimer){clearInterval(writeCtx.snapTimer);writeCtx.snapTimer=null;}
+  clearTimeout(writeCtx.saveTimer);
   var fic=null;
   for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
   if(fic&&fic.writing[writeCtx.idx]){
     var fr3=fic.writing[writeCtx.idx];
-    var newContent=document.getElementById("writeArea").innerHTML;
-    var finalText=stripHtml(newContent);
-    var baselineText=writeCtx.baselineText||"";
-    var countW=function(s){return s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;};
-    var wcBefore=countW(baselineText);
-    var wcAfter=countW(finalText);
-
-    // Only record a session if text actually changed (prevents duplicate/no-op entries)
-    if(finalText.trim() !== baselineText.trim()){
-      if(!fr3.sessions) fr3.sessions=[];
-      var sessId="s_"+Date.now();
-      fr3.sessions.push({
-        id:sessId,
-        startTime:writeCtx.openTime||nowStr(),
-        startTs:writeCtx.openTs||Date.now(),
-        endTime:nowStr(),
-        lastTick:Date.now(),
-        wcStart:wcBefore,
-        wcEnd:wcAfter,
-        note:"",
-        baselineText:baselineText,
-        finalText:finalText
-      });
-    }
-
-    fr3.content=newContent;
+    fr3.content=document.getElementById("writeArea").innerHTML;
     fr3.updatedAt=nowStr();
-    storeDiffSnapshot(fr3);
+    // Final snapshot to catch anything since last auto-snapshot
+    takeSnapshot(fr3, writeCtx.lastSnapshotText||writeCtx.baselineText||"");
     saveData();
   }
   document.getElementById("writeScreen").classList.remove("open");
