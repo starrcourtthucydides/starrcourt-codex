@@ -771,6 +771,15 @@ function openLogPanel(fr, ficId, fragIdx) {
   window._logCtx = {ficId: ficId||state.activeFicId, fragIdx: fragIdx!==undefined ? fragIdx : (writeCtx.idx||0)};
   var body = document.getElementById("logPanelBody");
   var allSessions = fr.sessions && fr.sessions.length ? fr.sessions : [];
+  // Deduplicate: remove sessions where both baselineText and finalText are identical to an earlier session
+  var seen = [];
+  allSessions = allSessions.filter(function(s){
+    if(s.baselineText===undefined || s.finalText===undefined) return true; // keep legacy
+    var key = (s.baselineText||"").trim() + "|||" + (s.finalText||"").trim();
+    if(seen.indexOf(key) !== -1) return false;
+    seen.push(key);
+    return true;
+  });
   var oldEntries = fr.changelog && fr.changelog.length ? fr.changelog : [];
   if(!allSessions.length && !oldEntries.length) {
     body.innerHTML = '<div class="log-panel-empty">No changes recorded yet.<br>Start writing to see your session history here.</div>';
@@ -1673,21 +1682,23 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
     var wcBefore=countW(baselineText);
     var wcAfter=countW(finalText);
 
-    // Always create a new session entry for this Save & Close (like Google Docs)
-    if(!fr3.sessions) fr3.sessions=[];
-    var sessId="s_"+Date.now();
-    fr3.sessions.push({
-      id:sessId,
-      startTime:writeCtx.openTime||nowStr(),
-      startTs:writeCtx.openTs||Date.now(),
-      endTime:nowStr(),
-      lastTick:Date.now(),
-      wcStart:wcBefore,
-      wcEnd:wcAfter,
-      note:"",
-      baselineText:baselineText,
-      finalText:finalText
-    });
+    // Only record a session if text actually changed (prevents duplicate/no-op entries)
+    if(finalText.trim() !== baselineText.trim()){
+      if(!fr3.sessions) fr3.sessions=[];
+      var sessId="s_"+Date.now();
+      fr3.sessions.push({
+        id:sessId,
+        startTime:writeCtx.openTime||nowStr(),
+        startTs:writeCtx.openTs||Date.now(),
+        endTime:nowStr(),
+        lastTick:Date.now(),
+        wcStart:wcBefore,
+        wcEnd:wcAfter,
+        note:"",
+        baselineText:baselineText,
+        finalText:finalText
+      });
+    }
 
     fr3.content=newContent;
     fr3.updatedAt=nowStr();
