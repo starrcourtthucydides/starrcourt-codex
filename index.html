@@ -814,7 +814,7 @@ function openLogPanel(fr) {
             var wDiff = s.wcEnd - s.wcStart;
             var wStr = wDiff > 0 ? "+"+wDiff : wDiff < 0 ? String(wDiff) : "no change";
             var wColor = wDiff > 0 ? "var(--green,#6ec98a)" : wDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
-            var sId = "s_"+(s.id||i2).toString().replace(/[^a-z0-9]/gi,"_");
+            var sId = (s.id||"s_"+i2).toString().replace(/[^a-z0-9_]/gi,"_");
             return '<div class="changelog-session" id="sess_'+sId+'" onclick="toggleSessionDiff(this,\''+sId+'\','+s.startTs+','+( s.lastTick||s.startTs||0)+')">' +
               '<div class="changelog-session-header">' +
                 '<div>' +
@@ -887,10 +887,11 @@ function toggleSessionDiff(row, sId, startTs, lastTick) {
     return;
   }
 
-  // Find this specific session
+  // Find this specific session by id (encoded in sId) or by startTs
   var session = null;
   for(var k=0;k<fr.sessions.length;k++){
-    if(fr.sessions[k].startTs===startTs){ session=fr.sessions[k]; break; }
+    var storedSId = (fr.sessions[k].id||"").toString().replace(/[^a-z0-9_]/gi,"_");
+    if(storedSId===sId || fr.sessions[k].startTs===startTs){ session=fr.sessions[k]; break; }
   }
   if(!session) {
     diffDiv.innerHTML = "<div class=\"diff-loading\">Session not found.</div>";
@@ -1197,7 +1198,7 @@ function openWriteScreen(idx){
   var fr=getFic().writing[idx];
   // Capture baseline text RIGHT NOW from saved data — before the editor loads anything
   var baselineText = stripHtml(fr.content||"");
-  writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, sessionId:null};
+  writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, sessionId:null, openTime:nowStr(), openTs:Date.now()};
   var sc=fr.status==="polished"?"var(--green)":fr.status==="scrapped"?"var(--red)":fr.status==="chapter"?"var(--accent2)":fr.status==="in-progress"?"#d4a855":"var(--accent)";
   document.getElementById("writeMeta").innerHTML=
     '<div class="write-meta-item"><span style="color:'+sc+'">'+h(fr.status||"draft")+'</span></div>'+
@@ -1640,23 +1641,31 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
   for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
   if(fic&&fic.writing[writeCtx.idx]){
     var fr3=fic.writing[writeCtx.idx];
-    fr3.content=document.getElementById("writeArea").innerHTML;
+    var newContent=document.getElementById("writeArea").innerHTML;
+    var finalText=stripHtml(newContent);
+    var baselineText=writeCtx.baselineText||"";
+    var countW=function(s){return s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length;};
+    var wcBefore=countW(baselineText);
+    var wcAfter=countW(finalText);
+
+    // Always create a new session entry for this Save & Close (like Google Docs)
+    if(!fr3.sessions) fr3.sessions=[];
+    var sessId="s_"+Date.now();
+    fr3.sessions.push({
+      id:sessId,
+      startTime:writeCtx.openTime||nowStr(),
+      startTs:writeCtx.openTs||Date.now(),
+      endTime:nowStr(),
+      lastTick:Date.now(),
+      wcStart:wcBefore,
+      wcEnd:wcAfter,
+      note:"",
+      baselineText:baselineText,
+      finalText:finalText
+    });
+
+    fr3.content=newContent;
     fr3.updatedAt=nowStr();
-    // Store finalText on the active session so diff always works
-    var finalText=stripHtml(fr3.content);
-    if(writeCtx.sessionId && fr3.sessions){
-      for(var si=0;si<fr3.sessions.length;si++){
-        if(fr3.sessions[si].id===writeCtx.sessionId){
-          fr3.sessions[si].finalText=finalText;
-          // If no baseline was stored yet (edge case), store one now
-          if(!fr3.sessions[si].baselineText && writeCtx.baselineText!==undefined){
-            fr3.sessions[si].baselineText=writeCtx.baselineText;
-          }
-          break;
-        }
-      }
-    }
-    // Also keep legacy snapshot for older sessions
     storeDiffSnapshot(fr3);
     saveData();
   }
