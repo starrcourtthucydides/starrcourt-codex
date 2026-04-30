@@ -773,27 +773,28 @@ function openLogPanel(fr, ficId, fragIdx) {
   var allSessions = fr.sessions && fr.sessions.length ? fr.sessions : [];
   // Normalize helper — collapse all whitespace for comparison
   var norm = function(s){ return (s||"").replace(/\s+/g," ").trim(); };
-  // Deduplicate:
-  // 1. Same baseline+final (exact duplicate)
-  // 2. Same finalText as a later session (superseded — keep the LATER one which has a real baseline)
-  var seenKeys = [];
+  // Deduplicate: when two sessions share the same finalText, keep the LATER one
+  // (later session has a real non-empty baseline, so its diff is more accurate)
+  // Process newest-first so "seen" marks the later entry first, then drops earlier dupes
   var seenFinals = [];
-  // First pass: collect all finalTexts so we can mark superseded ones
-  var finalTexts = allSessions.map(function(s){ return norm(s.finalText||""); });
-  allSessions = allSessions.filter(function(s, idx){
+  var seenKeys = [];
+  // Sort all sessions newest-first for dedup pass
+  var sorted = allSessions.slice().sort(function(a,b){ return (b.startTs||0)-(a.startTs||0); });
+  sorted = sorted.filter(function(s){
     if(s.baselineText===undefined || s.finalText===undefined) return true; // keep legacy
     var bl = norm(s.baselineText);
     var fn = norm(s.finalText);
-    // Drop if identical to an already-seen baseline+final pair
+    // Drop exact baseline+final duplicates
     var key = bl + "|||" + fn;
     if(seenKeys.indexOf(key) !== -1) return false;
     seenKeys.push(key);
-    // Drop if this session's finalText appears as the finalText of a LATER session
-    // (it's superseded — the later session's diff already covers the full picture)
-    var laterHasSameFinal = finalTexts.slice(idx+1).some(function(f){ return f === fn; });
-    if(laterHasSameFinal) return false;
+    // Drop if a newer session already has the same finalText (this one is superseded)
+    if(seenFinals.indexOf(fn) !== -1) return false;
+    seenFinals.push(fn);
     return true;
   });
+  // Re-sort newest-first for display
+  allSessions = sorted.sort(function(a,b){ return (b.startTs||0)-(a.startTs||0); });
   var oldEntries = fr.changelog && fr.changelog.length ? fr.changelog : [];
   if(!allSessions.length && !oldEntries.length) {
     body.innerHTML = '<div class="log-panel-empty">No changes recorded yet.<br>Start writing to see your session history here.</div>';
@@ -801,7 +802,7 @@ function openLogPanel(fr, ficId, fragIdx) {
     var html2 = "";
     var grouped = groupSessionsByDate(allSessions);
     grouped.order.slice().reverse().forEach(function(date){
-      var daySessions = grouped.groups[date].slice().reverse();
+      var daySessions = grouped.groups[date].slice().sort(function(a,b){return (b.startTs||0)-(a.startTs||0);});
       var countW2=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
       var dayDiff = daySessions.reduce(function(sum,s){
         if(s.baselineText!==undefined && s.finalText!==undefined){
@@ -820,8 +821,9 @@ function openLogPanel(fr, ficId, fragIdx) {
         '</div>' +
         '<div class="changelog-day-entries" style="display:none">' +
           daySessions.map(function(s,i2){
-            // Show only the save time (endTime), like Google Docs — no range
-            var saveTime = (s.endTime||s.startTime||"").split(" at ")[1] || (s.endTime||s.startTime||"");
+            // Show the open time (startTime) — when the edit session began
+            // This is always unique per session and matches what the user remembers doing
+            var saveTime = (s.startTime||s.endTime||"").split(" at ")[1] || (s.startTime||s.endTime||"");
             // Use baseline/final for accurate word counts when available
             var countW=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
             var wDiff;
