@@ -266,6 +266,7 @@ select.field-input option{background:var(--bg2);}
       <button class="fmt-btn" id="fmtSep" title="Insert separator">𐃯</button>
     </div>
     <button class="btn btn-primary btn-sm" id="writeSaveBtn">Save &amp; Close</button>
+    <button class="btn btn-sm" id="writeLogBtn" title="Change Log" style="margin-left:0.35rem">Log</button>
   </div>
   <div class="write-meta" id="writeMeta"></div>
   <div class="write-area-wrap">
@@ -765,8 +766,9 @@ function parseDisplayTime(s){
   }catch(e){return 0;}
 }
 
-function openLogPanel(fr) {
-  window._logPanelFr = fr; // store so toggleSessionDiff can find it
+function openLogPanel(fr, ficId, fragIdx) {
+  window._logPanelFr = fr;
+  window._logCtx = {ficId: ficId||state.activeFicId, fragIdx: fragIdx!==undefined ? fragIdx : (writeCtx.idx||0)};
   var body = document.getElementById("logPanelBody");
   var allSessions = fr.sessions && fr.sessions.length ? fr.sessions : [];
   var oldEntries = fr.changelog && fr.changelog.length ? fr.changelog : [];
@@ -866,12 +868,21 @@ function toggleSessionDiff(row, sId, startTs, lastTick) {
 
   if(arrow) arrow.classList.add("open");
   diffDiv.style.display = "block";
-  if(diffDiv.dataset.loaded) return;
-
+  // Never cache — always recompute so fresh sessions appear correctly
   diffDiv.innerHTML = "<div class=\"diff-loading\">Computing changes...</div>";
 
-  // Find the fragment via _logPanelFr (set when log opens)
-  var fr = window._logPanelFr || null;
+  // ALWAYS fetch fresh from state using _logCtx
+  var fr = null;
+  if(window._logCtx) {
+    var lc = window._logCtx;
+    for(var i=0;i<state.fics.length;i++){
+      if(state.fics[i].id===lc.ficId){
+        fr = state.fics[i].writing[lc.fragIdx]||null;
+        break;
+      }
+    }
+  }
+  // Fallback: scan all fics for a session matching startTs
   if(!fr) {
     outer: for(var i=0;i<state.fics.length;i++){
       for(var j=0;j<state.fics[i].writing.length;j++){
@@ -887,7 +898,7 @@ function toggleSessionDiff(row, sId, startTs, lastTick) {
     return;
   }
 
-  // Find this specific session by id (encoded in sId) or by startTs
+  // Find this specific session
   var session = null;
   for(var k=0;k<fr.sessions.length;k++){
     var storedSId = (fr.sessions[k].id||"").toString().replace(/[^a-z0-9_]/gi,"_");
@@ -1289,7 +1300,7 @@ function openFragDetail(idx){
     } else { fallback(); }
   });
   document.getElementById("editFragFromDetail").addEventListener("click",function(){closeModal("fragDetailModal");openEditFragMeta(idx);});
-  document.getElementById("logBtn").addEventListener("click",function(){openLogPanel(fr);});
+  document.getElementById("logBtn").addEventListener("click",function(){ var freshFr=getFic().writing[idx]; openLogPanel(freshFr, state.activeFicId, idx); });
 
   document.getElementById("openWriteFromDetail").addEventListener("click",function(){closeModal("fragDetailModal");openWriteScreen(idx);});
 }
@@ -1671,6 +1682,14 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
   }
   document.getElementById("writeScreen").classList.remove("open");
   state.activeFicId=writeCtx.ficId; state.tab="writing"; render();
+});
+
+document.getElementById("writeLogBtn").addEventListener("click",function(){
+  var fic=null;
+  for(var i=0;i<state.fics.length;i++){if(state.fics[i].id===writeCtx.ficId){fic=state.fics[i];break;}}
+  if(fic&&fic.writing[writeCtx.idx]){
+    openLogPanel(fic.writing[writeCtx.idx], writeCtx.ficId, writeCtx.idx);
+  }
 });
 
 // Formatting buttons
