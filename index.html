@@ -156,10 +156,10 @@ select.field-input option{background:var(--bg2);}
 .save-indicator{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--green);letter-spacing:0.08em;opacity:0;transition:opacity 0.3s;}
 .save-indicator.show{opacity:1;}
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-style:italic;}
-.diff-added{background:rgba(201,169,110,0.18);color:var(--accent);border-radius:2px;padding:0 2px;margin:0 1px;}
-.diff-deleted{background:rgba(196,86,58,0.15);color:#c4563a;text-decoration:line-through;border-radius:2px;padding:0 2px;margin:0 1px;display:inline;}
-.diff-added-word{color:var(--accent);}
-.diff-deleted-word{color:#c4563a;text-decoration:line-through;margin-right:1px;}
+.diff-added{background:rgba(201,169,110,0.25);color:var(--accent);padding:0.1em 0;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.diff-deleted{background:rgba(196,86,58,0.18);color:#c4563a;text-decoration:line-through;padding:0.1em 0;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.diff-added-word{color:var(--accent);background:rgba(201,169,110,0.25);padding:0.1em 0;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.diff-deleted-word{color:#c4563a;text-decoration:line-through;background:rgba(196,86,58,0.18);padding:0.1em 0;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
 .diff-view{font-family:"Cormorant Garamond",serif;font-size:0.92rem;line-height:1.9;color:var(--text-dim);padding:0.75rem 0;border-top:1px solid var(--border);margin-top:0.5rem;word-break:break-word;}
 .diff-view p{margin:0 0 1rem 0;}
 .diff-view p:last-child{margin-bottom:0;}
@@ -630,16 +630,26 @@ function groupSessionsByDate(sessions) {
   return { groups: groups, order: order };
 }
 
-// ── SNAPSHOT ENGINE (Google Docs-style auto-log) ─────────────────────────────
+function extractText(htmlStr) {
+  // Like stripHtml but uses a unique paragraph separator so diff can reconstruct breaks
+  var withBreaks = (htmlStr||"")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/div>/gi, "\n\n")
+    .replace(/<\/li>/gi, "\n");
+  var d = document.createElement("div");
+  d.innerHTML = withBreaks;
+  return (d.textContent || d.innerText || "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 // Called every ~90s while writing and once on Save & Close.
 // Creates a session entry only if text actually changed since last snapshot.
 function takeSnapshot(fr, fromText) {
   var el = document.getElementById("writeArea");
-  var currentText = el ? stripHtml(el.innerHTML) : stripHtml(fr.content||"");
+  var currentText = el ? extractText(el.innerHTML) : extractText(fr.content||"");
   var norm2 = function(s){ return (s||"").replace(/\s+/g," ").trim(); };
-  var before = norm2(fromText);
-  var after  = norm2(currentText);
-  if(before === after) return; // nothing changed — no entry
+  if(norm2(fromText) === norm2(currentText)) return;
   if(!fr.sessions) fr.sessions = [];
   var countW = function(s){ return s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length; };
   var sessId = "s_" + Date.now();
@@ -649,14 +659,13 @@ function takeSnapshot(fr, fromText) {
     startTs: Date.now(),
     endTime: nowStr(),
     lastTick: Date.now(),
-    wcStart: countW(before),
-    wcEnd: countW(after),
+    wcStart: countW(fromText||""),
+    wcEnd: countW(currentText),
     note: "",
-    baselineText: before,
-    finalText: after
+    baselineText: fromText||"",
+    finalText: currentText
   });
-  // Advance the baseline for the next snapshot window
-  writeCtx.lastSnapshotText = after;
+  writeCtx.lastSnapshotText = currentText;
 }
 
 
@@ -680,9 +689,9 @@ function tokenize(text) {
 }
 
 function computeDiff(oldText, newText) {
-  // Word-level LCS diff
-  var oldTokens = tokenize(stripHtml(oldText));
-  var newTokens = tokenize(stripHtml(newText));
+  // Word-level LCS diff — texts already have \n\n paragraph breaks from extractText
+  var oldTokens = tokenize(oldText);
+  var newTokens = tokenize(newText);
   
   // LCS using Myers-style DP (simplified)
   var m = oldTokens.length, n = newTokens.length;
@@ -722,6 +731,16 @@ function computeDiff(oldText, newText) {
     }
   }
   return result;
+}
+
+function editDistance(a, b) {
+  var m = a.length, n = b.length;
+  var dp = [];
+  for(var i=0;i<=m;i++){dp[i]=[];for(var j=0;j<=n;j++)dp[i][j]=i||j;}
+  for(var i=1;i<=m;i++)for(var j=1;j<=n;j++){
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  }
+  return dp[m][n];
 }
 
 function charDiff(oldWord, newWord) {
@@ -765,7 +784,14 @@ function renderDiff(diff) {
         html2 += v; j++;
       } else if(tok.type === "del") {
         var next = tokens[j+1];
+        var doCharDiff = false;
         if(next && next.type === "add" && !/^\n/.test(tok.val) && !/^\n/.test(next.val)) {
+          // Only do char-level diff if words are similar enough (edit distance < 60% of longer word)
+          var longer = Math.max(tok.val.length, next.val.length);
+          var dist = editDistance(tok.val, next.val);
+          doCharDiff = longer > 0 && (dist / longer) < 0.6;
+        }
+        if(doCharDiff) {
           var subDiff = charDiff(tok.val, next.val);
           var delPart = "", addPart = "";
           subDiff.forEach(function(c){
@@ -1316,7 +1342,7 @@ function openWriteScreen(idx){
   if(writeCtx.snapTimer) clearInterval(writeCtx.snapTimer);
   var fr=getFic().writing[idx];
   // Capture baseline text RIGHT NOW from saved data — before the editor loads anything
-  var baselineText = stripHtml(fr.content||"");
+  var baselineText = extractText(fr.content||"");
   writeCtx={ficId:state.activeFicId, idx:idx, baselineText:baselineText, lastSnapshotText:baselineText, sessionId:null, openTime:nowStr(), openTs:Date.now()};
 
   // Auto-snapshot every 30 seconds while writing (matches Google Docs timing)
