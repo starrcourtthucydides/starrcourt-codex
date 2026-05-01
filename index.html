@@ -651,7 +651,7 @@ function takeSnapshot(fr, fromText) {
   var norm2 = function(s){ return (s||"").replace(/\s+/g," ").trim(); };
   if(norm2(fromText) === norm2(currentText)) return;
   if(!fr.sessions) fr.sessions = [];
-  var countW = function(s){ return s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length; };
+  var countW = function(s){ return (s||"").trim().split(/\s+/).filter(function(w){return w.length>0;}).length; };
   var sessId = "s_" + Date.now();
   fr.sessions.push({
     id: sessId,
@@ -917,18 +917,34 @@ function openLogPanel(fr, ficId, fragIdx) {
     // grouped.order is built from allSessions which is newest-first, so first date = newest
     grouped.order.forEach(function(date){
       var daySessions = grouped.groups[date].slice().sort(function(a,b){return (b.startTs||0)-(a.startTs||0);});
-      var countW2=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
-      // Day total: words in newest finalText minus words in oldest baselineText for that day
-      // This avoids double-counting when sessions chain on each other
+      // Use the same word counting method as the fragment display (textContent from HTML)
+      var countWHtml = function(htmlStr) {
+        if(!htmlStr) return 0;
+        var td = document.createElement("div");
+        td.innerHTML = htmlStr;
+        return (td.textContent||td.innerText||"").trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
+      };
+      var countW2 = function(plainStr) {
+        return (plainStr||"").trim().split(/\s+/).filter(function(w){return w.length>0;}).length;
+      };
+      // Day total: words in newest finalText minus words in oldest baselineText
       var newestSession = daySessions[0];
       var oldestSession = daySessions[daySessions.length-1];
       var dayDiff;
       if(newestSession && newestSession.finalText!==undefined && oldestSession && oldestSession.baselineText!==undefined){
+        // Count using plain text (same basis as what was stored in baseline/finalText)
         dayDiff = countW2(newestSession.finalText) - countW2(oldestSession.baselineText);
+        // If baseline was empty (first write), use fragment's actual current word count instead
+        if(!oldestSession.baselineText || oldestSession.baselineText.trim()==="") {
+          var fic2=null;
+          for(var fi=0;fi<state.fics.length;fi++){if(state.fics[fi].id===(window._logCtx&&window._logCtx.ficId)){fic2=state.fics[fi];break;}}
+          var fragIdx2 = window._logCtx ? window._logCtx.fragIdx : -1;
+          if(fic2&&fragIdx2>=0&&fic2.writing[fragIdx2]){
+            dayDiff = countWHtml(fic2.writing[fragIdx2].content);
+          }
+        }
       } else {
-        dayDiff = daySessions.reduce(function(sum,s){
-          return sum + ((s.wcEnd||0) - (s.wcStart||0));
-        },0);
+        dayDiff = daySessions.reduce(function(sum,s){ return sum + ((s.wcEnd||0)-(s.wcStart||0)); },0);
       }
       var diffStr = dayDiff > 0 ? "+"+dayDiff : dayDiff < 0 ? String(dayDiff) : "no change";
       var diffColor = dayDiff > 0 ? "var(--green,#6ec98a)" : dayDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
@@ -944,13 +960,15 @@ function openLogPanel(fr, ficId, fragIdx) {
             // Show the open time (startTime) — when the edit session began
             // This is always unique per session and matches what the user remembers doing
             var saveTime = (s.startTime||s.endTime||"").split(" at ")[1] || (s.startTime||s.endTime||"");
-            // Use baseline/final for accurate word counts when available
-            var countW=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
+            var countW=function(s){
+              // Count words from plain text (as stored by extractText)
+              return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;
+            };
             var wDiff;
             if(s.baselineText!==undefined && s.finalText!==undefined){
               wDiff = countW(s.finalText) - countW(s.baselineText);
             } else {
-              wDiff = s.wcEnd - s.wcStart;
+              wDiff = (s.wcEnd||0) - (s.wcStart||0);
             }
             var wStr = wDiff > 0 ? "+"+wDiff : wDiff < 0 ? String(wDiff) : "no change";
             var wColor = wDiff > 0 ? "var(--green,#6ec98a)" : wDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
