@@ -789,7 +789,7 @@ function renderDiff(diff) {
           // Only do char-level diff if words are similar enough (edit distance < 60% of longer word)
           var longer = Math.max(tok.val.length, next.val.length);
           var dist = editDistance(tok.val, next.val);
-          doCharDiff = longer > 0 && (dist / longer) < 0.6;
+          doCharDiff = longer > 0 && (dist / longer) < 0.4;
         }
         if(doCharDiff) {
           var subDiff = charDiff(tok.val, next.val);
@@ -914,15 +914,22 @@ function openLogPanel(fr, ficId, fragIdx) {
   } else {
     var html2 = "";
     var grouped = groupSessionsByDate(allSessions);
-    grouped.order.slice().reverse().forEach(function(date){
+    // grouped.order is built from allSessions which is newest-first, so first date = newest
+    grouped.order.forEach(function(date){
       var daySessions = grouped.groups[date].slice().sort(function(a,b){return (b.startTs||0)-(a.startTs||0);});
       var countW2=function(s){return s?s.trim().split(/\s+/).filter(function(w){return w.length>0;}).length:0;};
-      var dayDiff = daySessions.reduce(function(sum,s){
-        if(s.baselineText!==undefined && s.finalText!==undefined){
-          return sum + (countW2(s.finalText) - countW2(s.baselineText));
-        }
-        return sum + (s.wcEnd - s.wcStart);
-      },0);
+      // Day total: words in newest finalText minus words in oldest baselineText for that day
+      // This avoids double-counting when sessions chain on each other
+      var newestSession = daySessions[0];
+      var oldestSession = daySessions[daySessions.length-1];
+      var dayDiff;
+      if(newestSession && newestSession.finalText!==undefined && oldestSession && oldestSession.baselineText!==undefined){
+        dayDiff = countW2(newestSession.finalText) - countW2(oldestSession.baselineText);
+      } else {
+        dayDiff = daySessions.reduce(function(sum,s){
+          return sum + ((s.wcEnd||0) - (s.wcStart||0));
+        },0);
+      }
       var diffStr = dayDiff > 0 ? "+"+dayDiff : dayDiff < 0 ? String(dayDiff) : "no change";
       var diffColor = dayDiff > 0 ? "var(--green,#6ec98a)" : dayDiff < 0 ? "var(--red,#c96e6e)" : "var(--text-muted)";
       html2 += '<div class="changelog-day">' +
