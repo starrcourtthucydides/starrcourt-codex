@@ -1958,7 +1958,35 @@ function restoreSelection() {
 
 function fmtToggle(cmd) {
   restoreSelection();
-  document.execCommand(cmd, false, null);
+  var sel = window.getSelection();
+  var isCollapsed = !sel || sel.isCollapsed;
+  var isActive = document.queryCommandState(cmd);
+
+  if(isCollapsed && isActive) {
+    // Nothing selected and format is ON — need to turn it off at the cursor.
+    // Insert a zero-width space, select it, toggle off, then delete it.
+    // This resets the browser's "typing state" for this format.
+    document.execCommand("insertHTML", false, "&#8203;"); // zero-width space
+    // Now select that character backwards
+    sel = window.getSelection();
+    if(sel && sel.anchorNode) {
+      var range = document.createRange();
+      var node = sel.anchorNode;
+      var offset = sel.anchorOffset;
+      if(offset > 0) {
+        range.setStart(node, offset - 1);
+        range.setEnd(node, offset);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand(cmd, false, null); // toggle off
+        // Delete the zero-width char
+        sel.collapseToEnd();
+        document.execCommand("delete", false, null);
+      }
+    }
+  } else {
+    document.execCommand(cmd, false, null);
+  }
   setTimeout(updateFmtState, 30);
 }
 
