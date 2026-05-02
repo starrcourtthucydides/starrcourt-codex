@@ -1423,37 +1423,52 @@ function openFragDetail(idx){
   document.getElementById("closeFragDetail").addEventListener("click",function(){closeModal("fragDetailModal");});
   document.getElementById("traverseBtn").addEventListener("click",function(){
     var raw = fr.content || "";
-    // Replace centered separator paragraphs with clean * * *
-    raw = raw.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, function(match, inner) {
-      if (match.indexOf("text-align:center") !== -1 || match.indexOf("text-align: center") !== -1) {
-        return "\n\n* * *\n\n";
-      }
+    var LINE_WIDTH = 60; // target line width for centering
+    function centerLine(text) {
+      var t = text.trim();
+      if(!t) return "";
+      var pad = Math.max(0, Math.floor((LINE_WIDTH - t.length) / 2));
+      return " ".repeat(pad) + t;
+    }
+    // Process paragraphs — detect centered ones and pad them
+    var lines = [];
+    raw.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, function(match, inner) {
+      var isCentered = match.indexOf("text-align:center") !== -1 || match.indexOf("text-align: center") !== -1;
       var d = document.createElement("div"); d.innerHTML = inner;
-      return "\n" + (d.textContent || d.innerText || "").trim() + "\n";
+      var text = (d.textContent || d.innerText || "").trim();
+      if(!text) return;
+      if(isCentered) {
+        lines.push(""); lines.push(centerLine(text)); lines.push("");
+      } else {
+        lines.push(text);
+      }
     });
     // Replace headings
-    raw = raw.replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, function(m, t) {
+    raw.replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, function(m, t) {
       var d = document.createElement("div"); d.innerHTML = t;
-      return "\n\n" + (d.textContent || "").trim().toUpperCase() + "\n\n";
+      lines.push(""); lines.push(centerLine((d.textContent||"").trim().toUpperCase())); lines.push("");
     });
-    // br to newline, block closing tags to newline
-    raw = raw.replace(/<br\s*\/?>/gi, "\n");
-    raw = raw.replace(/<\/(div|li|blockquote)>/gi, "\n");
-    // strip remaining tags
-    var td = document.createElement("div"); td.innerHTML = raw;
-    var plain = (td.textContent || td.innerText || "")
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n /g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+    // If no p tags found, fall back to br-based extraction
+    var plain;
+    if(lines.length === 0) {
+      var raw2 = fr.content || "";
+      raw2 = raw2.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(div|li|blockquote)>/gi, "\n");
+      var td2 = document.createElement("div"); td2.innerHTML = raw2;
+      plain = (td2.textContent || td2.innerText || "").replace(/[ \t]+/g," ").replace(/\n /g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+    } else {
+      plain = lines.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+    }
     var dateLine = "";
     if (fr.createdAt) dateLine += "Created: " + fr.createdAt;
     if (fr.updatedAt) dateLine += " · Edited: " + fr.updatedAt;
-    var noteLine = fr.note ? ("\n\n\"" + fr.note + "\"") : "";
-    var header = "[ " + (fr.title || "Untitled") + " | POV: " + (fr.pov || "—") + " | " + (fr.status || "draft") + " ]" +
-      (dateLine ? "\n" + dateLine : "") +
+    var noteLine = fr.note ? ("\n\n" + centerLine("\"" + fr.note + "\"")) : "";
+    var headerTitle = centerLine("[ " + (fr.title || "Untitled") + " | POV: " + (fr.pov || "—") + " | " + (fr.status || "draft") + " ]");
+    var headerDate = dateLine ? centerLine(dateLine) : "";
+    var separator = centerLine("─────────────────────");
+    var header = headerTitle +
+      (headerDate ? "\n" + headerDate : "") +
       noteLine +
-      "\n\n─────────────────────\n\n";
+      "\n\n" + separator + "\n\n";
     var full = header + plain;
     var btn = document.getElementById("traverseBtn");
     function flash() { if(btn){btn.textContent="Traversed ✦";setTimeout(function(){if(btn)btn.textContent="Transverse";},2000);} }
