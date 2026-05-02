@@ -1925,33 +1925,47 @@ document.getElementById("fmtRedo").addEventListener("click",function(){document.
 
 // ── FORMATTING TOGGLES ────────────────────────────────────────────────────────
 // Mobile fix: save selection before button tap steals focus, restore then execute
-function fmtToggle(cmd) {
-  var area = document.getElementById("writeArea");
+// ── FORMATTING TOGGLES ────────────────────────────────────────────────────────
+// Mobile: capture selection on touchstart before button tap steals focus
+var _savedFmtRange = null;
+
+document.getElementById("writeArea").addEventListener("blur", function(){
   var sel = window.getSelection();
-  var savedRange = null;
-  if(sel && sel.rangeCount > 0) savedRange = sel.getRangeAt(0).cloneRange();
-  area.focus();
-  if(savedRange) {
-    sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(savedRange);
+  if(sel && sel.rangeCount > 0) {
+    _savedFmtRange = sel.getRangeAt(0).cloneRange();
   }
+});
+
+// Capture on touchstart of any fmt button (fires before focus moves)
+document.querySelector(".write-toolbar").addEventListener("touchstart", function(){
+  var sel = window.getSelection();
+  if(sel && sel.rangeCount > 0) {
+    _savedFmtRange = sel.getRangeAt(0).cloneRange();
+  }
+}, {passive: true});
+
+function restoreSelection() {
+  var area = document.getElementById("writeArea");
+  area.focus();
+  if(_savedFmtRange) {
+    var sel = window.getSelection();
+    if(sel) {
+      sel.removeAllRanges();
+      sel.addRange(_savedFmtRange);
+    }
+  }
+}
+
+function fmtToggle(cmd) {
+  restoreSelection();
   document.execCommand(cmd, false, null);
-  updateFmtState();
+  setTimeout(updateFmtState, 30);
 }
 
 function fmtToggleHeader() {
+  restoreSelection();
   var area = document.getElementById("writeArea");
   var sel = window.getSelection();
-  var savedRange = null;
-  if(sel && sel.rangeCount > 0) savedRange = sel.getRangeAt(0).cloneRange();
-  area.focus();
-  if(savedRange) {
-    sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(savedRange);
-  }
-  // Check if cursor is already inside an h2 — if so, toggle back to p
   var node = sel && sel.anchorNode;
   var inH2 = false;
   while(node && node !== area) {
@@ -1959,7 +1973,7 @@ function fmtToggleHeader() {
     node = node.parentNode;
   }
   document.execCommand("formatBlock", false, inH2 ? "p" : "h2");
-  updateFmtState();
+  setTimeout(updateFmtState, 30);
 }
 
 function updateFmtState() {
@@ -1998,9 +2012,9 @@ document.getElementById("fmtRight").addEventListener("click",function(){fmt("jus
 document.getElementById("fmtH1").addEventListener("click",function(){fmtToggleHeader();});
 
 // Update button states when cursor moves
-document.getElementById("writeArea").addEventListener("keyup", updateFmtState);
-document.getElementById("writeArea").addEventListener("mouseup", updateFmtState);
-document.getElementById("writeArea").addEventListener("touchend", function(){ setTimeout(updateFmtState, 50); });
+document.getElementById("writeArea").addEventListener("keyup", function(){ setTimeout(updateFmtState,10); });
+document.getElementById("writeArea").addEventListener("mouseup", function(){ setTimeout(updateFmtState,10); });
+document.getElementById("writeArea").addEventListener("touchend", function(){ setTimeout(updateFmtState, 80); });
 
 
 // ── RESEARCH ──────────────────────────────────────────────────────────────────
