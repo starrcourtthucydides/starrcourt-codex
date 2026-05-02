@@ -130,19 +130,19 @@ select.field-input option{background:var(--bg2);}
 /* WRITING FULL SCREEN */
 .write-screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:400;overflow:hidden;}
 .write-screen.open{display:block;}
-.write-toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.6rem 0.85rem;display:none;align-items:center;gap:0.4rem;flex-wrap:wrap;z-index:401;touch-action:none;overflow:hidden;}
-.write-screen.open .write-toolbar{display:flex;}
+.write-toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.6rem 0.85rem;display:none;align-items:center;gap:0.4rem;flex-wrap:wrap;z-index:500;touch-action:none;}
+.write-toolbar.visible{display:flex;}
 .write-toolbar-left{display:flex;gap:0.35rem;align-items:center;flex:1;flex-wrap:wrap;}
 
 .fmt-btn{font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:0.3rem 0.55rem;border:1px solid var(--border-light);background:transparent;color:var(--text-dim);cursor:pointer;transition:all 0.15s;min-width:32px;text-align:center;}
 .fmt-btn:hover,.fmt-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(201,169,110,0.08);}
 .fmt-sep{width:1px;height:20px;background:var(--border);margin:0 0.15rem;}
-.write-meta{position:fixed;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;gap:0.85rem;flex-wrap:wrap;z-index:401;touch-action:none;overflow:hidden;}
+.write-meta{position:fixed;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;gap:0.85rem;flex-wrap:wrap;z-index:500;touch-action:none;}.write-meta.visible{display:flex;}
 .write-screen.open .write-meta{display:flex;}
 .write-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.06em;}
 .write-meta-item span{color:var(--accent);}
 .write-area-wrap{position:absolute;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;padding-left:1rem;padding-right:1rem;padding-bottom:3rem;display:flex;justify-content:center;overscroll-behavior:contain;}
-.write-footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;justify-content:space-between;gap:0.5rem;z-index:401;touch-action:none;}
+.write-footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;justify-content:space-between;gap:0.5rem;z-index:500;touch-action:none;}.write-footer.visible{display:flex;}
 .write-screen.open .write-footer{display:flex;}
 .write-area{width:100%;max-width:680px;min-height:100%;background:transparent;border:none;color:var(--text);font-family:'Cormorant Garamond',serif;font-size:1.1rem;line-height:2;outline:none;resize:none;caret-color:var(--accent);}.write-area i,.write-area em{font-style:italic;color:var(--accent);}.write-area b,.write-area strong{color:#c4563a;font-weight:600;}
 .write-area:empty:before{content:attr(data-placeholder);color:var(--text-muted);font-style:italic;pointer-events:none;}
@@ -256,33 +256,35 @@ select.field-input option{background:var(--bg2);}
 <div class="fic-list" id="ficList"></div>
 <div class="main" id="main"></div>
 
+<!-- WRITE MODE FIXED CHROME (outside write-screen so position:fixed works correctly) -->
+<div class="write-toolbar" id="writeToolbar">
+  <div class="write-toolbar-left">
+    <button class="fmt-btn" id="fmtUndo" title="Undo">&#8630;</button>
+    <button class="fmt-btn" id="fmtRedo" title="Redo">&#8631;</button>
+    <div class="fmt-sep"></div>
+    <button class="fmt-btn" id="fmtBold" title="Bold"><b>B</b></button>
+    <button class="fmt-btn" id="fmtItalic" title="Italic" style="font-style:italic;font-family:'Cormorant Garamond',serif;font-size:0.9rem;letter-spacing:0.05em"><i>I</i></button>
+    <button class="fmt-btn" id="fmtUnderline" title="Underline"><u>U</u></button>
+    <div class="fmt-sep"></div>
+    <button class="fmt-btn" id="fmtLeft" title="Align left">&#8676;</button>
+    <button class="fmt-btn" id="fmtCenter" title="Center">&#8596;</button>
+    <button class="fmt-btn" id="fmtRight" title="Align right">&#8677;</button>
+    <div class="fmt-sep"></div>
+    <button class="fmt-btn" id="fmtH1" title="Heading">H</button>
+  </div>
+  <button class="btn btn-primary btn-sm" id="writeSaveBtn">Save &amp; Close</button>
+  <button class="btn btn-sm" id="writeLogBtn" title="Change Log" style="margin-left:0.35rem">Log</button>
+</div>
+<div class="write-meta" id="writeMeta"></div>
+<div class="write-footer" id="writeFooter">
+  <div class="write-wc" id="writeWc">0 words</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--text-muted)">auto-saving...</div>
+</div>
+
 <!-- FULL SCREEN WRITE MODE -->
 <div class="write-screen" id="writeScreen">
-  <div class="write-toolbar">
-    <div class="write-toolbar-left">
-      <button class="fmt-btn" id="fmtUndo" title="Undo">&#8630;</button>
-      <button class="fmt-btn" id="fmtRedo" title="Redo">&#8631;</button>
-      <div class="fmt-sep"></div>
-      <button class="fmt-btn" id="fmtBold" title="Bold"><b>B</b></button>
-      <button class="fmt-btn" id="fmtItalic" title="Italic" style="font-style:italic;font-family:'Cormorant Garamond',serif;font-size:0.9rem;letter-spacing:0.05em"><i>I</i></button>
-      <button class="fmt-btn" id="fmtUnderline" title="Underline"><u>U</u></button>
-      <div class="fmt-sep"></div>
-      <button class="fmt-btn" id="fmtLeft" title="Align left">&#8676;</button>
-      <button class="fmt-btn" id="fmtCenter" title="Center">&#8596;</button>
-      <button class="fmt-btn" id="fmtRight" title="Align right">&#8677;</button>
-      <div class="fmt-sep"></div>
-      <button class="fmt-btn" id="fmtH1" title="Heading">H</button>
-    </div>
-    <button class="btn btn-primary btn-sm" id="writeSaveBtn">Save &amp; Close</button>
-    <button class="btn btn-sm" id="writeLogBtn" title="Change Log" style="margin-left:0.35rem">Log</button>
-  </div>
-  <div class="write-meta" id="writeMeta"></div>
   <div class="write-area-wrap">
     <div class="write-area" id="writeArea" contenteditable="true" data-placeholder="Begin writing..."></div>
-  </div>
-  <div class="write-footer">
-    <div class="write-wc" id="writeWc">0 words</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--text-muted)">auto-saving...</div>
   </div>
 </div>
 
@@ -1394,6 +1396,9 @@ function openWriteScreen(idx){
   area.innerHTML=fr.content||"";
   updateWriteWc();
   document.getElementById("writeScreen").classList.add("open");
+  document.querySelector(".write-toolbar").classList.add("visible");
+  document.getElementById("writeMeta").classList.add("visible");
+  document.getElementById("writeFooter").classList.add("visible");
   fitWriteScreen();
   setTimeout(fitWriteScreen, 50);
   area.focus();
@@ -1915,6 +1920,9 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
     saveData();
   }
   document.getElementById("writeScreen").classList.remove("open");
+  document.querySelector(".write-toolbar").classList.remove("visible");
+  document.getElementById("writeMeta").classList.remove("visible");
+  document.getElementById("writeFooter").classList.remove("visible");
   state.activeFicId=writeCtx.ficId; state.tab="writing"; render();
 });
 
