@@ -1956,38 +1956,37 @@ function restoreSelection() {
   }
 }
 
+// Pending format state — tracks what formats should apply on next keystroke
+var _pendingFormats = {bold: false, italic: false, underline: false};
+
 function fmtToggle(cmd) {
   restoreSelection();
   var sel = window.getSelection();
   var isCollapsed = !sel || sel.isCollapsed;
-  var isActive = document.queryCommandState(cmd);
 
-  if(isCollapsed && isActive) {
-    // Nothing selected and format is ON — need to turn it off at the cursor.
-    // Insert a zero-width space, select it, toggle off, then delete it.
-    // This resets the browser's "typing state" for this format.
-    document.execCommand("insertHTML", false, "&#8203;"); // zero-width space
-    // Now select that character backwards
-    sel = window.getSelection();
-    if(sel && sel.anchorNode) {
-      var range = document.createRange();
-      var node = sel.anchorNode;
-      var offset = sel.anchorOffset;
-      if(offset > 0) {
-        range.setStart(node, offset - 1);
-        range.setEnd(node, offset);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        document.execCommand(cmd, false, null); // toggle off
-        // Delete the zero-width char
-        sel.collapseToEnd();
-        document.execCommand("delete", false, null);
-      }
+  if(isCollapsed) {
+    // No selection — just flip the pending state
+    _pendingFormats[cmd] = !_pendingFormats[cmd];
+    // Sync browser's typing state by inserting+deleting a char with the new state
+    // First set browser to match our desired state
+    var currentState = document.queryCommandState(cmd);
+    if(currentState !== _pendingFormats[cmd]) {
+      document.execCommand(cmd, false, null);
     }
   } else {
+    // Text is selected — toggle normally
     document.execCommand(cmd, false, null);
+    // Update pending state to match what's at cursor after toggle
+    _pendingFormats[cmd] = document.queryCommandState(cmd);
   }
   setTimeout(updateFmtState, 30);
+}
+
+// When cursor moves, sync _pendingFormats with actual state at cursor
+function syncPendingFormats() {
+  ["bold","italic","underline"].forEach(function(cmd){
+    _pendingFormats[cmd] = document.queryCommandState(cmd);
+  });
 }
 
 function fmtToggleHeader() {
@@ -2005,12 +2004,12 @@ function fmtToggleHeader() {
 }
 
 function updateFmtState() {
-  // Update active state on Bold/Italic/Underline/Header buttons
-  var cmds = [["fmtBold","bold"],["fmtItalic","italic"],["fmtUnderline","underline"]];
-  cmds.forEach(function(pair){
+  syncPendingFormats();
+  var cmdMap = [["fmtBold","bold"],["fmtItalic","italic"],["fmtUnderline","underline"]];
+  cmdMap.forEach(function(pair){
     var btn = document.getElementById(pair[0]);
     if(btn) {
-      var active = document.queryCommandState(pair[1]);
+      var active = _pendingFormats[pair[1]];
       btn.style.background = active ? "var(--accent)" : "";
       btn.style.color = active ? "var(--bg)" : "";
     }
@@ -2043,6 +2042,13 @@ document.getElementById("fmtH1").addEventListener("click",function(){fmtToggleHe
 document.getElementById("writeArea").addEventListener("keyup", function(){ setTimeout(updateFmtState,10); });
 document.getElementById("writeArea").addEventListener("mouseup", function(){ setTimeout(updateFmtState,10); });
 document.getElementById("writeArea").addEventListener("touchend", function(){ setTimeout(updateFmtState, 80); });
+// Sync pending formats when cursor moves to new position
+document.getElementById("writeArea").addEventListener("keydown", function(e){
+  // If user pressed arrow keys or Enter, sync pending state from new cursor position
+  if([37,38,39,40,13].indexOf(e.keyCode) !== -1) {
+    setTimeout(syncPendingFormats, 10);
+  }
+});
 
 
 // ── RESEARCH ──────────────────────────────────────────────────────────────────
