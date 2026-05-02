@@ -1427,36 +1427,55 @@ function openFragDetail(idx){
     function centerLine(text) {
       var t = text.trim();
       if(!t) return "";
-      // Account for wide unicode chars (emoji, special symbols) roughly
-      var visLen = t.replace(/[\u{1F000}-\u{1FFFF}]/gu, "  ").replace(/[\u0100-\uFFFF]/g, " ").length;
+      // Rough visual length accounting for wide unicode chars
+      var visLen = 0;
+      for(var ci=0;ci<t.length;ci++){
+        var code = t.codePointAt(ci);
+        if(code > 0xFFFF){ visLen+=2; ci++; } // surrogate pairs / emoji
+        else if(code > 0x2E7F){ visLen+=1.5; } // misc unicode (approx)
+        else visLen+=1;
+      }
+      visLen = Math.round(visLen);
       var pad = Math.max(0, Math.floor((LINE_WIDTH - visLen) / 2));
       return " ".repeat(pad) + t;
     }
 
-    // Parse fragment HTML paragraph by paragraph, preserving order
-    var lines = [];
+    // Parse ONLY direct top-level children to avoid duplicating nested content
     var tempDiv = document.createElement("div");
     tempDiv.innerHTML = raw;
-    var children = tempDiv.querySelectorAll("p, h1, h2, h3, h4, h5, h6, div, li");
-    if(children.length === 0) {
-      // Fallback: no block elements, treat as plain text
-      var fallback = document.createElement("div");
-      fallback.innerHTML = raw.replace(/<br\s*\/?>/gi, "\n");
-      lines.push((fallback.textContent||fallback.innerText||"").trim());
-    } else {
-      children.forEach(function(el) {
-        var text = (el.textContent || el.innerText || "").trim();
-        if(!text) return;
-        var style = el.getAttribute("style") || "";
-        var isCentered = style.indexOf("text-align:center") !== -1 || style.indexOf("text-align: center") !== -1;
-        if(isCentered) {
-          lines.push(centerLine(text));
-        } else {
-          lines.push(text);
-        }
-      });
+    var lines = [];
+    var directChildren = tempDiv.childNodes;
+    for(var ci2=0; ci2<directChildren.length; ci2++) {
+      var node = directChildren[ci2];
+      if(node.nodeType === 3) { // text node
+        var t2 = (node.textContent||"").trim();
+        if(t2) lines.push(t2);
+        continue;
+      }
+      if(node.nodeType !== 1) continue; // skip comments etc
+      var el = node;
+      var tagName = el.tagName ? el.tagName.toUpperCase() : "";
+      // Skip non-block elements at top level
+      if(["SCRIPT","STYLE"].indexOf(tagName) !== -1) continue;
+      var text = (el.textContent || el.innerText || "").trim();
+      if(!text) continue;
+      var style = el.getAttribute("style") || "";
+      var isCentered = style.indexOf("text-align:center") !== -1 || style.indexOf("text-align: center") !== -1;
+      // Also check computed style for elements like <center> tag
+      if(!isCentered && tagName === "CENTER") isCentered = true;
+      if(isCentered) {
+        lines.push(centerLine(text));
+      } else {
+        lines.push(text);
+      }
     }
-    var plain = lines.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+    // If nothing found (rare edge case), fallback
+    if(lines.length === 0) {
+      var fb = document.createElement("div");
+      fb.innerHTML = raw.replace(/<br\s*\/?>/gi,"\n");
+      lines.push((fb.textContent||fb.innerText||"").trim());
+    }
+    var plain = lines.join("\n\n").replace(/\n{3,}/g,"\n\n").trim();
     var dateLine = "";
     if (fr.createdAt) dateLine += "Created: " + fr.createdAt;
     if (fr.updatedAt) dateLine += " · Edited: " + fr.updatedAt;
