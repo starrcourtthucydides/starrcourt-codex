@@ -1427,12 +1427,11 @@ function openFragDetail(idx){
     function centerLine(text) {
       var t = text.trim();
       if(!t) return "";
-      // Rough visual length accounting for wide unicode chars
       var visLen = 0;
       for(var ci=0;ci<t.length;ci++){
         var code = t.codePointAt(ci);
-        if(code > 0xFFFF){ visLen+=2; ci++; } // surrogate pairs / emoji
-        else if(code > 0x2E7F){ visLen+=1.5; } // misc unicode (approx)
+        if(code > 0xFFFF){ visLen+=2; ci++; }
+        else if(code > 0x2E7F){ visLen+=1.5; }
         else visLen+=1;
       }
       visLen = Math.round(visLen);
@@ -1440,36 +1439,50 @@ function openFragDetail(idx){
       return " ".repeat(pad) + t;
     }
 
-    // Parse ONLY direct top-level children to avoid duplicating nested content
+    function processNode(node, lines) {
+      if(node.nodeType === 3) { // raw text node
+        var t3 = (node.textContent||"").trim();
+        if(t3) lines.push(t3);
+        return;
+      }
+      if(node.nodeType !== 1) return;
+      var tag = (node.tagName||"").toUpperCase();
+      if(["SCRIPT","STYLE"].indexOf(tag) !== -1) return;
+      var style = node.getAttribute ? (node.getAttribute("style")||"") : "";
+      var isCentered = style.indexOf("text-align:center")!==-1 || style.indexOf("text-align: center")!==-1 || tag==="CENTER";
+      var text = (node.textContent||node.innerText||"").trim();
+      if(!text) return;
+
+      // If this node is a direct content block (p, h1-h6, li) — output it
+      if(/^(P|H[1-6]|LI|BLOCKQUOTE)$/.test(tag)) {
+        lines.push(isCentered ? centerLine(text) : text);
+        return;
+      }
+      // If it's a container (div, section, article etc.) — recurse into its children
+      // so each inner paragraph keeps its own alignment
+      var hasBlockChildren = false;
+      for(var k=0;k<node.childNodes.length;k++){
+        var cn = node.childNodes[k];
+        if(cn.nodeType===1 && /^(P|H[1-6]|LI|DIV|SECTION|ARTICLE)$/.test((cn.tagName||"").toUpperCase())){
+          hasBlockChildren = true; break;
+        }
+      }
+      if(hasBlockChildren) {
+        for(var k2=0;k2<node.childNodes.length;k2++){
+          processNode(node.childNodes[k2], lines);
+        }
+      } else {
+        // Leaf container — output as one line with parent's alignment
+        lines.push(isCentered ? centerLine(text) : text);
+      }
+    }
+
     var tempDiv = document.createElement("div");
     tempDiv.innerHTML = raw;
     var lines = [];
-    var directChildren = tempDiv.childNodes;
-    for(var ci2=0; ci2<directChildren.length; ci2++) {
-      var node = directChildren[ci2];
-      if(node.nodeType === 3) { // text node
-        var t2 = (node.textContent||"").trim();
-        if(t2) lines.push(t2);
-        continue;
-      }
-      if(node.nodeType !== 1) continue; // skip comments etc
-      var el = node;
-      var tagName = el.tagName ? el.tagName.toUpperCase() : "";
-      // Skip non-block elements at top level
-      if(["SCRIPT","STYLE"].indexOf(tagName) !== -1) continue;
-      var text = (el.textContent || el.innerText || "").trim();
-      if(!text) continue;
-      var style = el.getAttribute("style") || "";
-      var isCentered = style.indexOf("text-align:center") !== -1 || style.indexOf("text-align: center") !== -1;
-      // Also check computed style for elements like <center> tag
-      if(!isCentered && tagName === "CENTER") isCentered = true;
-      if(isCentered) {
-        lines.push(centerLine(text));
-      } else {
-        lines.push(text);
-      }
+    for(var ci2=0; ci2<tempDiv.childNodes.length; ci2++){
+      processNode(tempDiv.childNodes[ci2], lines);
     }
-    // If nothing found (rare edge case), fallback
     if(lines.length === 0) {
       var fb = document.createElement("div");
       fb.innerHTML = raw.replace(/<br\s*\/?>/gi,"\n");
