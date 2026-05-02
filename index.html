@@ -267,7 +267,6 @@ select.field-input option{background:var(--bg2);}
       <button class="fmt-btn" id="fmtRight" title="Align right">&#8677;</button>
       <div class="fmt-sep"></div>
       <button class="fmt-btn" id="fmtH1" title="Heading">H</button>
-      <button class="fmt-btn" id="fmtSep" title="Insert separator">𐃯</button>
     </div>
     <button class="btn btn-primary btn-sm" id="writeSaveBtn">Save &amp; Close</button>
     <button class="btn btn-sm" id="writeLogBtn" title="Change Log" style="margin-left:0.35rem">Log</button>
@@ -1923,17 +1922,85 @@ document.getElementById("writeLogBtn").addEventListener("click",function(){
 // Formatting buttons
 document.getElementById("fmtUndo").addEventListener("click",function(){document.getElementById("writeArea").focus();document.execCommand("undo",false,null);});
 document.getElementById("fmtRedo").addEventListener("click",function(){document.getElementById("writeArea").focus();document.execCommand("redo",false,null);});
-document.getElementById("fmtBold").addEventListener("click",function(){fmt("bold");});
-document.getElementById("fmtItalic").addEventListener("click",function(){fmt("italic");});
-document.getElementById("fmtUnderline").addEventListener("click",function(){fmt("underline");});
+
+// ── FORMATTING TOGGLES ────────────────────────────────────────────────────────
+// Mobile fix: save selection before button tap steals focus, restore then execute
+function fmtToggle(cmd) {
+  var area = document.getElementById("writeArea");
+  var sel = window.getSelection();
+  var savedRange = null;
+  if(sel && sel.rangeCount > 0) savedRange = sel.getRangeAt(0).cloneRange();
+  area.focus();
+  if(savedRange) {
+    sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+  document.execCommand(cmd, false, null);
+  updateFmtState();
+}
+
+function fmtToggleHeader() {
+  var area = document.getElementById("writeArea");
+  var sel = window.getSelection();
+  var savedRange = null;
+  if(sel && sel.rangeCount > 0) savedRange = sel.getRangeAt(0).cloneRange();
+  area.focus();
+  if(savedRange) {
+    sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+  // Check if cursor is already inside an h2 — if so, toggle back to p
+  var node = sel && sel.anchorNode;
+  var inH2 = false;
+  while(node && node !== area) {
+    if(node.nodeName && node.nodeName.toUpperCase() === "H2") { inH2 = true; break; }
+    node = node.parentNode;
+  }
+  document.execCommand("formatBlock", false, inH2 ? "p" : "h2");
+  updateFmtState();
+}
+
+function updateFmtState() {
+  // Update active state on Bold/Italic/Underline/Header buttons
+  var cmds = [["fmtBold","bold"],["fmtItalic","italic"],["fmtUnderline","underline"]];
+  cmds.forEach(function(pair){
+    var btn = document.getElementById(pair[0]);
+    if(btn) {
+      var active = document.queryCommandState(pair[1]);
+      btn.style.background = active ? "var(--accent)" : "";
+      btn.style.color = active ? "var(--bg)" : "";
+    }
+  });
+  // Check header state
+  var h1btn = document.getElementById("fmtH1");
+  if(h1btn) {
+    var sel2 = window.getSelection();
+    var node2 = sel2 && sel2.anchorNode;
+    var area2 = document.getElementById("writeArea");
+    var inH2 = false;
+    while(node2 && node2 !== area2) {
+      if(node2.nodeName && node2.nodeName.toUpperCase() === "H2") { inH2 = true; break; }
+      node2 = node2.parentNode;
+    }
+    h1btn.style.background = inH2 ? "var(--accent)" : "";
+    h1btn.style.color = inH2 ? "var(--bg)" : "";
+  }
+}
+
+document.getElementById("fmtBold").addEventListener("click",function(){fmtToggle("bold");});
+document.getElementById("fmtItalic").addEventListener("click",function(){fmtToggle("italic");});
+document.getElementById("fmtUnderline").addEventListener("click",function(){fmtToggle("underline");});
 document.getElementById("fmtLeft").addEventListener("click",function(){fmt("justifyLeft");});
 document.getElementById("fmtCenter").addEventListener("click",function(){fmt("justifyCenter");});
 document.getElementById("fmtRight").addEventListener("click",function(){fmt("justifyRight");});
-document.getElementById("fmtH1").addEventListener("click",function(){fmt("formatBlock","h2");});
-document.getElementById("fmtSep").addEventListener("click",function(){
-  document.getElementById("writeArea").focus();
-  document.execCommand("insertHTML",false,'<p style="text-align:center;color:var(--text-muted);letter-spacing:0.3em;margin:1rem 0;">&#x1040EF;</p>');
-});
+document.getElementById("fmtH1").addEventListener("click",function(){fmtToggleHeader();});
+
+// Update button states when cursor moves
+document.getElementById("writeArea").addEventListener("keyup", updateFmtState);
+document.getElementById("writeArea").addEventListener("mouseup", updateFmtState);
+document.getElementById("writeArea").addEventListener("touchend", function(){ setTimeout(updateFmtState, 50); });
 
 
 // ── RESEARCH ──────────────────────────────────────────────────────────────────
