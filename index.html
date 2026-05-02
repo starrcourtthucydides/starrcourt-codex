@@ -139,7 +139,7 @@ select.field-input option{background:var(--bg2);}
 .write-meta{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0.85rem;display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;flex-shrink:0;touch-action:none;user-select:none;-webkit-user-select:none;}
 .write-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.06em;}
 .write-meta-item span{color:var(--accent);}
-.write-area-wrap{flex:1;overflow-y:scroll;overflow-x:hidden;padding:1.5rem 1rem 4rem;display:flex;justify-content:center;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.write-area-wrap{flex:1;overflow-y:scroll;overflow-x:hidden;padding:1.5rem 1rem 4rem;display:flex;justify-content:center;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:none;}
 .write-footer{background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-shrink:0;touch-action:none;user-select:none;-webkit-user-select:none;}
 .write-area{width:100%;max-width:680px;background:transparent;border:none;color:var(--text);font-family:'Cormorant Garamond',serif;font-size:1.1rem;line-height:2;outline:none;resize:none;caret-color:var(--accent);word-break:break-word;}.write-area i,.write-area em{font-style:italic;color:var(--accent);}.write-area b,.write-area strong{color:#c4563a;font-weight:600;}
 .write-area:empty:before{content:attr(data-placeholder);color:var(--text-muted);font-style:italic;pointer-events:none;}
@@ -1937,6 +1937,27 @@ window.addEventListener("resize", fitWriteScreen);
 document.querySelector(".write-area-wrap").addEventListener("click", function(e){
   if(e.target === this) {
     document.getElementById("writeArea").focus();
+  }
+});
+
+// Keep cursor visible inside write-area-wrap WITHOUT scrolling the page
+// This prevents the browser's auto-scroll from pushing the toolbar away
+document.addEventListener("selectionchange", function(){
+  var ws = document.getElementById("writeScreen");
+  if(!ws || !ws.classList.contains("open")) return;
+  var wrap = ws.querySelector(".write-area-wrap");
+  if(!wrap) return;
+  var sel = window.getSelection();
+  if(!sel || !sel.rangeCount) return;
+  var range = sel.getRangeAt(0);
+  var rect = range.getBoundingClientRect();
+  if(rect.height === 0) return; // collapsed / no visible rect
+  var wrapRect = wrap.getBoundingClientRect();
+  var margin = 40; // px breathing room above/below cursor
+  if(rect.bottom + margin > wrapRect.bottom) {
+    wrap.scrollTop += rect.bottom + margin - wrapRect.bottom;
+  } else if(rect.top - margin < wrapRect.top) {
+    wrap.scrollTop -= wrapRect.top - rect.top + margin;
   }
 });
 
