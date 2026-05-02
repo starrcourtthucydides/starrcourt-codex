@@ -128,17 +128,22 @@ select.field-input option{background:var(--bg2);}
 .cd-header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.2rem;gap:0.5rem;}
 .cd-btns{display:flex;gap:0.35rem;flex-shrink:0;}
 /* WRITING FULL SCREEN */
-.write-screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:400;flex-direction:column;overflow:hidden;}
-.write-screen.open{display:flex;}
-.write-toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.6rem 0.85rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;flex-shrink:0;overflow:hidden;touch-action:none;}
+.write-screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:400;overflow:hidden;}
+.write-screen.open{display:block;}
+.write-toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.6rem 0.85rem;display:none;align-items:center;gap:0.4rem;flex-wrap:wrap;z-index:401;touch-action:none;overflow:hidden;}
+.write-screen.open .write-toolbar{display:flex;}
 .write-toolbar-left{display:flex;gap:0.35rem;align-items:center;flex:1;flex-wrap:wrap;}
+
 .fmt-btn{font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:0.3rem 0.55rem;border:1px solid var(--border-light);background:transparent;color:var(--text-dim);cursor:pointer;transition:all 0.15s;min-width:32px;text-align:center;}
 .fmt-btn:hover,.fmt-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(201,169,110,0.08);}
 .fmt-sep{width:1px;height:20px;background:var(--border);margin:0 0.15rem;}
-.write-meta{background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0.85rem;display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;flex-shrink:0;overflow:hidden;touch-action:none;}
+.write-meta{position:fixed;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;gap:0.85rem;flex-wrap:wrap;z-index:401;touch-action:none;overflow:hidden;}
+.write-screen.open .write-meta{display:flex;}
 .write-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.06em;}
 .write-meta-item span{color:var(--accent);}
-.write-area-wrap{flex:1;overflow-y:auto;overflow-x:hidden;padding:1.5rem 1rem;display:flex;justify-content:center;min-height:0;overscroll-behavior:contain;}
+.write-area-wrap{position:absolute;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;padding-left:1rem;padding-right:1rem;padding-bottom:3rem;display:flex;justify-content:center;overscroll-behavior:contain;}
+.write-footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;justify-content:space-between;gap:0.5rem;z-index:401;touch-action:none;}
+.write-screen.open .write-footer{display:flex;}
 .write-area{width:100%;max-width:680px;min-height:100%;background:transparent;border:none;color:var(--text);font-family:'Cormorant Garamond',serif;font-size:1.1rem;line-height:2;outline:none;resize:none;caret-color:var(--accent);}.write-area i,.write-area em{font-style:italic;color:var(--accent);}.write-area b,.write-area strong{color:#c4563a;font-weight:600;}
 .write-area:empty:before{content:attr(data-placeholder);color:var(--text-muted);font-style:italic;pointer-events:none;}
 .write-footer{background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-shrink:0;overflow:hidden;touch-action:none;}
@@ -1924,7 +1929,19 @@ document.getElementById("writeLogBtn").addEventListener("click",function(){
 function fitWriteScreen() {
   var ws = document.getElementById("writeScreen");
   if(!ws || !ws.classList.contains("open")) return;
-  ws.style.height = window.innerHeight + "px";
+  var toolbar = ws.querySelector(".write-toolbar");
+  var meta = document.getElementById("writeMeta");
+  var wrap = ws.querySelector(".write-area-wrap");
+  if(!toolbar || !meta || !wrap) return;
+
+  // Measure the fixed headers and position write area below them
+  var toolbarH = toolbar.offsetHeight;
+  var metaH = meta.offsetHeight;
+  var topH = toolbarH + metaH;
+
+  meta.style.top = toolbarH + "px";
+  wrap.style.top = topH + "px";
+  wrap.style.paddingTop = "1.5rem";
 }
 window.addEventListener("resize", fitWriteScreen);
 
