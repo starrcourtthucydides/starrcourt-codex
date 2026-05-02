@@ -1399,11 +1399,12 @@ function openWriteScreen(idx){
   document.querySelector(".write-toolbar").classList.add("visible");
   document.getElementById("writeMeta").classList.add("visible");
   document.getElementById("writeFooter").classList.add("visible");
-  document.body.style.overflow = "hidden";
-  document.body.style.position = "fixed";
-  document.body.style.width = "100%";
+  document.documentElement.style.overflow = "hidden";
   fitWriteScreen();
-  setTimeout(fitWriteScreen, 50);
+  setTimeout(function(){
+    fitWriteScreen();
+    document.getElementById("writeArea").focus();
+  }, 80);
   area.focus();
 }
 
@@ -1926,9 +1927,7 @@ document.getElementById("writeSaveBtn").addEventListener("click",function(){
   document.querySelector(".write-toolbar").classList.remove("visible");
   document.getElementById("writeMeta").classList.remove("visible");
   document.getElementById("writeFooter").classList.remove("visible");
-  document.body.style.overflow = "";
-  document.body.style.position = "";
-  document.body.style.width = "";
+  document.documentElement.style.overflow = "";
   state.activeFicId=writeCtx.ficId; state.tab="writing"; render();
 });
 
@@ -1943,7 +1942,6 @@ document.getElementById("writeLogBtn").addEventListener("click",function(){
 function fitWriteScreen() {
   var ws = document.getElementById("writeScreen");
   if(!ws || !ws.classList.contains("open")) return;
-  // Toolbar/meta/footer are now top-level fixed elements, find by ID/class directly
   var toolbar = document.getElementById("writeToolbar");
   var meta = document.getElementById("writeMeta");
   var footer = document.getElementById("writeFooter");
@@ -1960,7 +1958,19 @@ function fitWriteScreen() {
   wrap.style.bottom = footerH + "px";
   wrap.style.paddingTop = "1.5rem";
 }
+
+// Use visualViewport to keep toolbar anchored when keyboard opens
+if(window.visualViewport) {
+  window.visualViewport.addEventListener("resize", fitWriteScreen);
+  window.visualViewport.addEventListener("scroll", fitWriteScreen);
+}
 window.addEventListener("resize", fitWriteScreen);
+
+document.querySelector(".write-area-wrap").addEventListener("click", function(e){
+  if(e.target === this) {
+    document.getElementById("writeArea").focus();
+  }
+});
 
 // Formatting buttons
 document.getElementById("fmtUndo").addEventListener("click",function(){document.getElementById("writeArea").focus();document.execCommand("undo",false,null);});
@@ -2085,29 +2095,8 @@ document.getElementById("fmtH1").addEventListener("click",function(){fmtToggleHe
 document.getElementById("writeArea").addEventListener("keyup", function(){ setTimeout(updateFmtState,10); });
 document.getElementById("writeArea").addEventListener("mouseup", function(){ setTimeout(updateFmtState,10); });
 document.getElementById("writeArea").addEventListener("touchend", function(){ setTimeout(updateFmtState, 80); });
-// Prevent Enter key from scrolling the page — keep scroll inside write-area-wrap only
+// Sync pending formats on arrow keys / Enter
 document.getElementById("writeArea").addEventListener("keydown", function(e){
-  if(e.keyCode === 13) {
-    // After Enter is processed, scroll cursor into view within the wrap only
-    setTimeout(function(){
-      var area = document.getElementById("writeArea");
-      var wrap = document.querySelector(".write-area-wrap");
-      var sel = window.getSelection();
-      if(!sel || !sel.rangeCount || !wrap) return;
-      var range = sel.getRangeAt(0);
-      var rect = range.getBoundingClientRect();
-      var wrapRect = wrap.getBoundingClientRect();
-      // If cursor is below the visible area of the wrap, scroll wrap down
-      if(rect.bottom > wrapRect.bottom) {
-        wrap.scrollTop += (rect.bottom - wrapRect.bottom) + 24;
-      }
-      // If cursor is above the visible area, scroll wrap up
-      if(rect.top < wrapRect.top) {
-        wrap.scrollTop -= (wrapRect.top - rect.top) + 24;
-      }
-    }, 10);
-  }
-  // Sync pending formats on arrow keys / Enter
   if([37,38,39,40,13].indexOf(e.keyCode) !== -1) {
     setTimeout(syncPendingFormats, 10);
   }
