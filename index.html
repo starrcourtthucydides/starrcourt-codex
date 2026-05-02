@@ -1464,9 +1464,54 @@ function openFragDetail(idx){
       try { document.execCommand("copy"); } catch(e) {}
       document.body.removeChild(ta); flash();
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(full).then(flash).catch(fallback);
-    } else { fallback(); }
+    // Show two-option transverse menu
+    var existing = document.getElementById("traverseMenu");
+    if(existing) existing.remove();
+    var menu = document.createElement("div");
+    menu.id = "traverseMenu";
+    menu.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:10px;padding:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:0.75rem;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.6);";
+    var title = document.createElement("div");
+    title.textContent = "Transverse ✦";
+    title.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--accent,#c9a96e);margin-bottom:0.25rem;letter-spacing:0.05em;";
+    var sub = document.createElement("div");
+    sub.textContent = (fr.title || "Untitled");
+    sub.style.cssText = "font-size:0.7rem;color:var(--text-muted,#666);font-family:'JetBrains Mono',monospace;margin-bottom:0.5rem;";
+    var copyBtn = document.createElement("button");
+    copyBtn.textContent = "⌘ Copy as Plain Text";
+    copyBtn.style.cssText = "background:var(--surface2,#222);border:1px solid var(--border,#333);color:var(--text,#e8e0d4);padding:0.6rem 1rem;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;cursor:pointer;text-align:left;";
+    var dlBtn = document.createElement("button");
+    dlBtn.textContent = "↓ Download as .txt";
+    dlBtn.style.cssText = "background:var(--surface2,#222);border:1px solid var(--border,#333);color:var(--text,#e8e0d4);padding:0.6rem 1rem;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;cursor:pointer;text-align:left;";
+    var cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "✕ Cancel";
+    cancelBtn.style.cssText = "background:transparent;border:none;color:var(--text-muted,#666);padding:0.4rem;font-family:'JetBrains Mono',monospace;font-size:0.65rem;cursor:pointer;text-align:center;margin-top:0.25rem;";
+    var overlay2 = document.createElement("div");
+    overlay2.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;";
+    function closeMenu(){ menu.remove(); overlay2.remove(); }
+    overlay2.onclick = closeMenu;
+    cancelBtn.onclick = closeMenu;
+    copyBtn.onclick = function(){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(full).then(function(){ flash(); closeMenu(); }).catch(function(){ fallback(); closeMenu(); });
+      } else { fallback(); closeMenu(); }
+    };
+    dlBtn.onclick = function(){
+      var safeName = (fr.title || "fragment").replace(/[^a-z0-9\-_ ]/gi,"_").trim().replace(/\s+/g,"-").toLowerCase();
+      var blob = new Blob([full], {type:"text/plain;charset=utf-8"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = safeName + ".txt";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      flash(); closeMenu();
+    };
+    menu.appendChild(title);
+    menu.appendChild(sub);
+    menu.appendChild(copyBtn);
+    menu.appendChild(dlBtn);
+    menu.appendChild(cancelBtn);
+    document.body.appendChild(overlay2);
+    document.body.appendChild(menu);
   });
   document.getElementById("editFragFromDetail").addEventListener("click",function(){closeModal("fragDetailModal");openEditFragMeta(idx);});
   document.getElementById("logBtn").addEventListener("click",function(){ var freshFr=getFic().writing[idx]; openLogPanel(freshFr, state.activeFicId, idx); });
