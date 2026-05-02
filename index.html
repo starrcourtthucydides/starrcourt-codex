@@ -1423,52 +1423,48 @@ function openFragDetail(idx){
   document.getElementById("closeFragDetail").addEventListener("click",function(){closeModal("fragDetailModal");});
   document.getElementById("traverseBtn").addEventListener("click",function(){
     var raw = fr.content || "";
-    var LINE_WIDTH = 60; // target line width for centering
+    var LINE_WIDTH = 60;
     function centerLine(text) {
       var t = text.trim();
       if(!t) return "";
-      var pad = Math.max(0, Math.floor((LINE_WIDTH - t.length) / 2));
+      // Account for wide unicode chars (emoji, special symbols) roughly
+      var visLen = t.replace(/[\u{1F000}-\u{1FFFF}]/gu, "  ").replace(/[\u0100-\uFFFF]/g, " ").length;
+      var pad = Math.max(0, Math.floor((LINE_WIDTH - visLen) / 2));
       return " ".repeat(pad) + t;
     }
-    // Process paragraphs — detect centered ones and pad them
+
+    // Parse fragment HTML paragraph by paragraph, preserving order
     var lines = [];
-    raw.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, function(match, inner) {
-      var isCentered = match.indexOf("text-align:center") !== -1 || match.indexOf("text-align: center") !== -1;
-      var d = document.createElement("div"); d.innerHTML = inner;
-      var text = (d.textContent || d.innerText || "").trim();
-      if(!text) return;
-      if(isCentered) {
-        lines.push(""); lines.push(centerLine(text)); lines.push("");
-      } else {
-        lines.push(text);
-      }
-    });
-    // Replace headings
-    raw.replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, function(m, t) {
-      var d = document.createElement("div"); d.innerHTML = t;
-      lines.push(""); lines.push(centerLine((d.textContent||"").trim().toUpperCase())); lines.push("");
-    });
-    // If no p tags found, fall back to br-based extraction
-    var plain;
-    if(lines.length === 0) {
-      var raw2 = fr.content || "";
-      raw2 = raw2.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(div|li|blockquote)>/gi, "\n");
-      var td2 = document.createElement("div"); td2.innerHTML = raw2;
-      plain = (td2.textContent || td2.innerText || "").replace(/[ \t]+/g," ").replace(/\n /g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+    var tempDiv = document.createElement("div");
+    tempDiv.innerHTML = raw;
+    var children = tempDiv.querySelectorAll("p, h1, h2, h3, h4, h5, h6, div, li");
+    if(children.length === 0) {
+      // Fallback: no block elements, treat as plain text
+      var fallback = document.createElement("div");
+      fallback.innerHTML = raw.replace(/<br\s*\/?>/gi, "\n");
+      lines.push((fallback.textContent||fallback.innerText||"").trim());
     } else {
-      plain = lines.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+      children.forEach(function(el) {
+        var text = (el.textContent || el.innerText || "").trim();
+        if(!text) return;
+        var style = el.getAttribute("style") || "";
+        var isCentered = style.indexOf("text-align:center") !== -1 || style.indexOf("text-align: center") !== -1;
+        if(isCentered) {
+          lines.push(centerLine(text));
+        } else {
+          lines.push(text);
+        }
+      });
     }
+    var plain = lines.join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
     var dateLine = "";
     if (fr.createdAt) dateLine += "Created: " + fr.createdAt;
     if (fr.updatedAt) dateLine += " · Edited: " + fr.updatedAt;
-    var noteLine = fr.note ? ("\n\n" + centerLine("\"" + fr.note + "\"")) : "";
-    var headerTitle = centerLine("[ " + (fr.title || "Untitled") + " | POV: " + (fr.pov || "—") + " | " + (fr.status || "draft") + " ]");
-    var headerDate = dateLine ? centerLine(dateLine) : "";
-    var separator = centerLine("─────────────────────");
-    var header = headerTitle +
-      (headerDate ? "\n" + headerDate : "") +
+    var noteLine = fr.note ? ("\n\n\"" + fr.note + "\"") : "";
+    var header = "[ " + (fr.title||"Untitled") + " | POV: " + (fr.pov||"—") + " | " + (fr.status||"draft") + " ]" +
+      (dateLine ? "\n" + dateLine : "") +
       noteLine +
-      "\n\n" + separator + "\n\n";
+      "\n\n" + centerLine("─────────────────────") + "\n\n";
     var full = header + plain;
     var btn = document.getElementById("traverseBtn");
     function flash() { if(btn){btn.textContent="Traversed ✦";setTimeout(function(){if(btn)btn.textContent="Transverse";},2000);} }
