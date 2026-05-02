@@ -141,7 +141,7 @@ select.field-input option{background:var(--bg2);}
 .write-screen.open .write-meta{display:flex;}
 .write-meta-item{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-muted);letter-spacing:0.06em;}
 .write-meta-item span{color:var(--accent);}
-.write-area-wrap{position:absolute;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;padding-left:1rem;padding-right:1rem;padding-bottom:3rem;display:flex;justify-content:center;overscroll-behavior:contain;}
+.write-area-wrap{position:fixed;left:0;right:0;overflow-y:auto;overflow-x:hidden;padding-left:1rem;padding-right:1rem;display:flex;justify-content:center;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
 .write-footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:0.5rem 0.85rem;display:none;align-items:center;justify-content:space-between;gap:0.5rem;z-index:500;touch-action:none;}.write-footer.visible{display:flex;}
 .write-screen.open .write-footer{display:flex;}
 .write-area{width:100%;max-width:680px;min-height:100%;background:transparent;border:none;color:var(--text);font-family:'Cormorant Garamond',serif;font-size:1.1rem;line-height:2;outline:none;resize:none;caret-color:var(--accent);}.write-area i,.write-area em{font-style:italic;color:var(--accent);}.write-area b,.write-area strong{color:#c4563a;font-weight:600;}
@@ -1937,18 +1937,21 @@ document.getElementById("writeLogBtn").addEventListener("click",function(){
 function fitWriteScreen() {
   var ws = document.getElementById("writeScreen");
   if(!ws || !ws.classList.contains("open")) return;
-  var toolbar = ws.querySelector(".write-toolbar");
+  // Toolbar/meta/footer are now top-level fixed elements, find by ID/class directly
+  var toolbar = document.getElementById("writeToolbar");
   var meta = document.getElementById("writeMeta");
+  var footer = document.getElementById("writeFooter");
   var wrap = ws.querySelector(".write-area-wrap");
   if(!toolbar || !meta || !wrap) return;
 
-  // Measure the fixed headers and position write area below them
   var toolbarH = toolbar.offsetHeight;
   var metaH = meta.offsetHeight;
+  var footerH = footer ? footer.offsetHeight : 0;
   var topH = toolbarH + metaH;
 
   meta.style.top = toolbarH + "px";
   wrap.style.top = topH + "px";
+  wrap.style.bottom = footerH + "px";
   wrap.style.paddingTop = "1.5rem";
 }
 window.addEventListener("resize", fitWriteScreen);
